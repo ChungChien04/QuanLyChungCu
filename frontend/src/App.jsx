@@ -16,19 +16,18 @@ import AdminRoute from "./AdminRoute";
 import AdminApartmentPage from "./pages/admin/AdminApartmentPage";
 import GoogleCallback from "./pages/GoogleCallback";
 import NewsListPage from "./pages/NewsListPage";
-
+import Footer from "./components/Footer";
 import AdminNewsPage from "./pages/admin/AdminNewsPage";
 
 function App() {
   return (
     <>
+      {/* NAVBAR */}
       <Navbar />
 
       {/* FIX navbar đè trang */}
       <div style={{ paddingTop: "80px" }}>
-
         <Routes>
-
           {/* HOME */}
           <Route path="/" element={<HomePage />} />
 
@@ -40,12 +39,27 @@ function App() {
           <Route path="/verify-otp" element={<VerifyOTPPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/apartments" element={<ApartmentListPage />} />
-          <Route path="/admin/reviews" element={<AdminReviewPage />} />
           <Route path="/google/callback" element={<GoogleCallback />} />
-          <Route path="/news" element={<ProtectedRoute><NewsListPage /></ProtectedRoute>} />
-          <Route path="/admin/news" element={<AdminRoute><AdminNewsPage /></AdminRoute>} />
 
+          {/* NEWS */}
+          <Route
+            path="/news"
+            element={
+              <ProtectedRoute>
+                <NewsListPage />
+              </ProtectedRoute>
+            }
+          />
 
+          {/* ADMIN - NEWS */}
+          <Route
+            path="/admin/news"
+            element={
+              <AdminRoute>
+                <AdminNewsPage />
+              </AdminRoute>
+            }
+          />
 
           {/* PROTECTED */}
           <Route
@@ -57,12 +71,10 @@ function App() {
             }
           />
 
-          
-
-          {/* ⭐⭐⭐ PUBLIC — CHI TIẾT CĂN HỘ ⭐⭐⭐ */}
+          {/* CHI TIẾT CĂN HỘ */}
           <Route path="/apartment/:id" element={<ApartmentDetailPage />} />
 
-          {/* ⭐⭐⭐ ADMIN — ĐẶT CUỐI CÙNG ⭐⭐⭐ */}
+          {/* ADMIN - APARTMENTS */}
           <Route
             path="/admin/apartments"
             element={
@@ -72,8 +84,20 @@ function App() {
             }
           />
 
+          {/* ADMIN - REVIEWS */}
+          <Route
+            path="/admin/reviews"
+            element={
+              <AdminRoute>
+                <AdminReviewPage />
+              </AdminRoute>
+            }
+          />
         </Routes>
       </div>
+
+      {/* ⭐ FOOTER ÁP DỤNG CHO TẤT CẢ TRANG ⭐ */}
+      <Footer />
     </>
   );
 }

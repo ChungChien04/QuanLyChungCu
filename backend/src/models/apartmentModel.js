@@ -1,7 +1,5 @@
 const mongoose = require('mongoose');
 
-
-
 const apartmentSchema = new mongoose.Schema({
   title: { type: String, required: true },
 
@@ -11,10 +9,10 @@ const apartmentSchema = new mongoose.Schema({
   // thông tin cơ bản
   area: { type: Number, required: true },
   price: { type: Number, required: true },
-  status: { 
-    type: String, 
-    enum: ["available", "rented", "sold"], 
-    default: "available" 
+  status: {
+    type: String,
+    enum: ["available", "rented", "sold"],
+    default: "available"
   },
 
   // chi tiết phòng
@@ -34,12 +32,14 @@ const apartmentSchema = new mongoose.Schema({
   utilities: [{ type: String }],
 
   // ảnh
-  images: [{ type: String }]
-  
+  images: [{ type: String }],
+
+  // ⭐ Căn hộ nổi bật
+  featured: {
+    type: Boolean,
+    default: false
+  }
+
 }, { timestamps: true });
-
-
-module.exports = mongoose.model("Apartment", apartmentSchema);
-
 
 module.exports = mongoose.model("Apartment", apartmentSchema);

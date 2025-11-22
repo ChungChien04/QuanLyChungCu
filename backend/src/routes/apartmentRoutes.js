@@ -8,17 +8,24 @@ const {
   getApartmentById,
   createApartment,
   updateApartment,
-  deleteApartment
+  deleteApartment,
+  getFeaturedApartments
 } = require("../controllers/apartmentController");
 
 const { protect, admin } = require("../middleware/authMiddleware");
 
+
 // =============================
 // PUBLIC ROUTES
 // =============================
-router.get("/", getApartments);            
-router.get("/search", searchApartments);   
-router.get("/:id", getApartmentById);      
+
+// ⭐ Quan trọng: phải đặt TRƯỚC "/:id"
+router.get("/featured", getFeaturedApartments);
+
+router.get("/", getApartments);
+router.get("/search", searchApartments);
+router.get("/:id", getApartmentById);
+
 
 // =============================
 // ADMIN ROUTES

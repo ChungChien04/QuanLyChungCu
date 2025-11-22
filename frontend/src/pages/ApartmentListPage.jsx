@@ -40,6 +40,7 @@ const ApartmentListPage = () => {
   const [tempRoom, setTempRoom] = useState("");
   const [tempStatus, setTempStatus] = useState(filters.status);
 
+
   // =========================
   // TEMP FILTER FOR SUMMARY POPUP
   // (CHỌN NHIỀU TIÊU CHÍ RỒI BẤM XEM KQ)

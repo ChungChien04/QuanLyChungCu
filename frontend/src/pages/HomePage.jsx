@@ -10,28 +10,26 @@ const HomePage = () => {
   const [_error, setError] = useState("");
   const [keyword, setKeyword] = useState("");
 
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  // Pagination (giữ nguyên nhưng không dùng)
 
-  const fetchApartments = async (page = 1) => {
+
+  // ⭐ Lấy căn hộ nổi bật
+  const fetchApartments = async () => {
     try {
       setLoading(true);
-      const { data } = await axios.get(`${API_BASE}/api/apartments`, {
-        params: { page, limit: 6 },
-      });
-      setApartments(data.apartments);
-      setCurrentPage(data.currentPage);
-      setTotalPages(data.totalPages);
+      const { data } = await axios.get(`${API_BASE}/api/apartments/featured`);
+      setApartments(data.apartments || []);
+      
     } catch {
-      setError("Không thể tải dữ liệu căn hộ");
+      setError("Không thể tải dữ liệu căn hộ nổi bật");
     } finally {
       setLoading(false);
     }
   };
 
+  // ⭐ Search sẽ không dùng featured
   const handleSearch = async () => {
-    if (!keyword.trim()) return fetchApartments(1);
+    if (!keyword.trim()) return fetchApartments();
 
     try {
       setLoading(true);
@@ -39,8 +37,7 @@ const HomePage = () => {
         params: { q: keyword },
       });
       setApartments(data);
-      setTotalPages(1);
-      setCurrentPage(1);
+      
     } catch {
       setError("Tìm kiếm thất bại");
     } finally {
@@ -49,7 +46,7 @@ const HomePage = () => {
   };
 
   useEffect(() => {
-    fetchApartments(1);
+    fetchApartments();
   }, []);
 
   return (
@@ -105,10 +102,11 @@ const HomePage = () => {
           </div>
         </div>
       </section>
-{/* SECTION TITLE */}
-<h2 className="mt-5 text-3xl font-bold text-center text-green-700 mb-10">
-  CĂN HỘ TỐT TẠI SMARTBUILDING
-</h2>
+
+      {/* TITLE */}
+      <h2 className="mt-5 text-3xl font-bold text-center text-green-700 mb-10">
+        CĂN HỘ NỔI BẬT TẠI SMARTBUILDING
+      </h2>
 
       {/* LIST */}
       <div className="max-w-7xl mx-auto px-6 py-14">
@@ -132,7 +130,15 @@ const HomePage = () => {
                   "
                 >
                   {/* IMAGE */}
-                  <div className="h-56 w-full overflow-hidden">
+                  <div className="relative h-56 w-full overflow-hidden">
+
+                    {/* ⭐ Badge Nổi bật */}
+                    {apt.featured && (
+                      <span className="absolute top-3 right-3 bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                        NỔI BẬT
+                      </span>
+                    )}
+
                     <img
                       src={
                         apt.images?.[0]
@@ -187,60 +193,6 @@ const HomePage = () => {
                 </Link>
               ))}
             </div>
-
-            {/* PAGINATION */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-3 mt-12">
-
-                <button
-                  disabled={currentPage === 1}
-                  onClick={() => fetchApartments(currentPage - 1)}
-                  className={`
-                    px-4 py-2 rounded-lg border text-sm transition
-                    ${
-                      currentPage === 1
-                        ? "bg-gray-200 cursor-not-allowed"
-                        : "bg-white hover:bg-gray-100"
-                    }
-                  `}
-                >
-                  ← Trước
-                </button>
-
-                {[...Array(totalPages)].map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => fetchApartments(i + 1)}
-                    className={`
-                      px-4 py-2 rounded-lg border text-sm transition
-                      ${
-                        currentPage === i + 1
-                          ? "bg-green-700 text-white"
-                          : "bg-white hover:bg-gray-100"
-                      }
-                    `}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-
-                <button
-                  disabled={currentPage === totalPages}
-                  onClick={() => fetchApartments(currentPage + 1)}
-                  className={`
-                    px-4 py-2 rounded-lg border text-sm transition
-                    ${
-                      currentPage === totalPages
-                        ? "bg-gray-200 cursor-not-allowed"
-                        : "bg-white hover:bg-gray-100"
-                    }
-                  `}
-                >
-                  Sau →
-                </button>
-
-              </div>
-            )}
           </>
         )}
       </div>
