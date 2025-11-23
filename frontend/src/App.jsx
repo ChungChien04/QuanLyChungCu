@@ -1,5 +1,8 @@
 import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+
+// Pages - Public
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -10,14 +13,21 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ProfilePage from "./pages/ProfilePage";
 import ApartmentListPage from "./pages/ApartmentListPage";
 import ApartmentDetailPage from "./pages/ApartmentDetailPage";
+import GoogleCallback from "./pages/GoogleCallback";
+
+// Admin Pages
 import AdminReviewPage from "./pages/admin/AdminReviewPage";
+import AdminApartmentPage from "./pages/admin/AdminApartmentPage";
+import AdminRentalsPage from "./pages/AdminRentalManagement";
+import AdminNewsPage from "./pages/admin/AdminNewsPage";
+
+// Client Pages
+import MyRentals from "./pages/MyRentals";
+import NewsListPage from "./pages/NewsListPage";
+
+// Route Guards
 import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
-import AdminApartmentPage from "./pages/admin/AdminApartmentPage";
-import GoogleCallback from "./pages/GoogleCallback";
-import NewsListPage from "./pages/NewsListPage";
-import Footer from "./components/Footer";
-import AdminNewsPage from "./pages/admin/AdminNewsPage";
 
 function App() {
   return (
@@ -39,9 +49,10 @@ function App() {
           <Route path="/verify-otp" element={<VerifyOTPPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/apartments" element={<ApartmentListPage />} />
+          <Route path="/apartment/:id" element={<ApartmentDetailPage />} />
           <Route path="/google/callback" element={<GoogleCallback />} />
 
-          {/* NEWS */}
+          {/* CLIENT - NEWS */}
           <Route
             path="/news"
             element={
@@ -61,20 +72,10 @@ function App() {
             }
           />
 
-          {/* PROTECTED */}
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            }
-          />
+          {/* ADMIN PUBLIC */}
+          <Route path="/admin/reviews" element={<AdminReviewPage />} />
 
-          {/* CHI TIẾT CĂN HỘ */}
-          <Route path="/apartment/:id" element={<ApartmentDetailPage />} />
-
-          {/* ADMIN - APARTMENTS */}
+          {/* ADMIN PAGES */}
           <Route
             path="/admin/apartments"
             element={
@@ -83,20 +84,36 @@ function App() {
               </AdminRoute>
             }
           />
-
-          {/* ADMIN - REVIEWS */}
           <Route
-            path="/admin/reviews"
+            path="/admin/rentals"
             element={
               <AdminRoute>
-                <AdminReviewPage />
+                <AdminRentalsPage />
               </AdminRoute>
+            }
+          />
+
+          {/* PROTECTED CLIENT PAGES */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-rentals"
+            element={
+              <ProtectedRoute>
+                <MyRentals />
+              </ProtectedRoute>
             }
           />
         </Routes>
       </div>
 
-      {/* ⭐ FOOTER ÁP DỤNG CHO TẤT CẢ TRANG ⭐ */}
+      {/* FOOTER */}
       <Footer />
     </>
   );

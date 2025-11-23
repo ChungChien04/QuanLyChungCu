@@ -344,7 +344,7 @@ const ApartmentListPage = () => {
                   {[
                     { label: "Còn trống", value: "available" },
                     { label: "Đang thuê", value: "rented" },
-                    { label: "Đã bán", value: "sold" },
+                    { label: "Đang trong thời gian thuê", value: "reserved" },
                   ].map((s, i) => (
                     <button
                       key={i}
@@ -502,7 +502,7 @@ const ApartmentListPage = () => {
                 {[
                   { label: "Còn trống", value: "available" },
                   { label: "Đang thuê", value: "rented" },
-                  { label: "Đã bán", value: "sold" },
+                  { label: "Đang trong thời gian thuê", value: "reserved" },
                 ].map((s, i) => (
                   <button
                     key={i}
@@ -605,7 +605,7 @@ const ApartmentListPage = () => {
                         ? "Còn trống"
                         : apt.status === "rented"
                         ? "Đang thuê"
-                        : "Đã bán"}
+                        : "Đang trong thời gian thuê"}
                     </span>
                   </div>
                 </div>

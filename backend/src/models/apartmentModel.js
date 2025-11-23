@@ -9,10 +9,10 @@ const apartmentSchema = new mongoose.Schema({
   // thông tin cơ bản
   area: { type: Number, required: true },
   price: { type: Number, required: true },
-  status: {
-    type: String,
-    enum: ["available", "rented", "sold"],
-    default: "available"
+  status: { 
+    type: String, 
+    enum: ["available", "reserved", "rented"], 
+    default: "available" 
   },
 
   // chi tiết phòng
@@ -35,11 +35,7 @@ const apartmentSchema = new mongoose.Schema({
   images: [{ type: String }],
 
   // ⭐ Căn hộ nổi bật
-  featured: {
-    type: Boolean,
-    default: false
-  }
-
+  featured: { type: Boolean, default: false }
 }, { timestamps: true });
 
 module.exports = mongoose.model("Apartment", apartmentSchema);

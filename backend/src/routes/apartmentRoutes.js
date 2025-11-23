@@ -1,31 +1,26 @@
 const express = require("express");
 const router = express.Router();
-const upload = require("../middleware/uploadApartmentImage");
 
+const apartmentController = require("../controllers/apartmentController");
+const upload = require("../middleware/uploadApartmentImage");
+const { protect, admin } = require("../middleware/authMiddleware");
+
+// Destructure để hỗ trợ cách dùng mới
 const {
   searchApartments,
   getApartments,
   getApartmentById,
   createApartment,
   updateApartment,
-  deleteApartment,
-  getFeaturedApartments
-} = require("../controllers/apartmentController");
-
-const { protect, admin } = require("../middleware/authMiddleware");
-
+  deleteApartment
+} = apartmentController;
 
 // =============================
 // PUBLIC ROUTES
 // =============================
-
-// ⭐ Quan trọng: phải đặt TRƯỚC "/:id"
-router.get("/featured", getFeaturedApartments);
-
-router.get("/", getApartments);
+router.get("/", getApartments);                  // hỗ trợ style mới
 router.get("/search", searchApartments);
 router.get("/:id", getApartmentById);
-
 
 // =============================
 // ADMIN ROUTES
@@ -34,7 +29,7 @@ router.post(
   "/",
   protect,
   admin,
-  upload.array("images", 5),
+  upload.array("images", 10),     // gộp, cho phép tối đa
   createApartment
 );
 
@@ -42,7 +37,7 @@ router.put(
   "/:id",
   protect,
   admin,
-  upload.array("images", 5),
+  upload.array("images", 10),
   updateApartment
 );
 
