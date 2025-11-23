@@ -6,6 +6,8 @@ const cors = require('cors');
 const path = require('path'); 
 
 const createDefaultAdmin = require("./src/utils/createAdmin.js");
+const paymentRoutes = require("./src/routes/paymentRoutes");
+
 
 // Routes import
 const rentalRoutes = require("./src/routes/rentalRoutes"); 
@@ -40,6 +42,7 @@ app.use('/api/apartments', require('./src/routes/apartmentRoutes'));
 app.use('/api/chatbot', require('./src/routes/chatbotRoutes'));
 app.use('/api/reports', require('./src/routes/reportRoutes'));
 app.use('/api/reviews', require('./src/routes/reviewRoutes'));
+app.use("/api/payments", paymentRoutes);
 
 // 🍀 Giữ lại cả 2 route của hai bên
 app.use("/api/rentals", rentalRoutes); 

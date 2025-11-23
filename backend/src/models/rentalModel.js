@@ -8,7 +8,7 @@ const rentalSchema = new mongoose.Schema({
   totalPrice: { type: Number, required: true },
   status: { 
     type: String, 
-    enum: ["pending", "approved", "rented", "cancelling", "cancelled"], 
+    enum: ["pending", "reserved", "approved", "rented", "cancelling", "cancelled"], 
     default: "pending" 
   },
   contractSigned: { type: Boolean, default: false },

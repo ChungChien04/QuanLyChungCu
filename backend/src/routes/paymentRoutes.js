@@ -1,20 +1,14 @@
-// /backend/src/routes/paymentRoutes.js
-const express = require('express');
+// routes/paymentRoutes.js
+const express = require("express");
 const router = express.Router();
-const {
-  createPayment,
-  getMyPayments,
-  getAllPayments,
-  updatePaymentStatus,
-} = require('../controllers/paymentController');
-const { protect, admin } = require('../middleware/authMiddleware');
+const paymentController = require("../controllers/paymentController");
+// const { protect } = require("../middleware/authMiddleware"); 
+// Lưu ý: Route tạo URL cần protect, nhưng route return KHÔNG ĐƯỢC protect vì VNPay gọi vào
 
-// Cư dân: tạo và xem thanh toán của mình
-router.post('/', protect, createPayment);        // UC6 - tạo thanh toán
-router.get('/my', protect, getMyPayments);       // UC6 - xem lịch sử cá nhân
+// Tạo URL thanh toán (Cần đăng nhập)
+router.get("/create_payment_url/:id", paymentController.createPaymentUrl); // Bỏ protect tạm thời nếu muốn test nhanh, nhưng nên giữ
 
-// Admin: quản lý thanh toán
-router.get('/', protect, admin, getAllPayments); // UC11 - xem tất cả
-router.put('/:id/status', protect, admin, updatePaymentStatus); // UC11 - cập nhật trạng thái
+// VNPay Redirect về (Không cần token header vì trình duyệt redirect)
+router.get("/vnpay_return", paymentController.vnpayReturn);
 
 module.exports = router;

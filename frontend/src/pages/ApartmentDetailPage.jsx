@@ -94,7 +94,8 @@ const ApartmentDetailPage = () => {
   };
 
   const submitEdit = async () => {
-    if (!editContent.trim()) return alert("Nội dung đánh giá không được để trống.");
+    if (!editContent.trim())
+      return alert("Nội dung đánh giá không được để trống.");
 
     try {
       await axios.put(
@@ -123,18 +124,14 @@ const ApartmentDetailPage = () => {
 
   // ===== RENT HANDLERS =====
   useEffect(() => {
-    // Xác định ngày bắt đầu = ngày 5
-    const today = new Date();
-    let startMonth = today.getMonth();
-    if (today.getDate() > 5) startMonth += 1;
-    const start = new Date(today.getFullYear(), startMonth, 5);
-    setRentStart(start.toISOString().slice(0, 10));
+  if (!rentStart) return;
 
-    // Tính ngày kết thúc
-    const end = new Date(start);
-    end.setMonth(end.getMonth() + rentMonths);
-    setRentEnd(end.toISOString().slice(0, 10));
-  }, [rentMonths]);
+  const start = new Date(rentStart);
+  const end = new Date(start);
+  end.setMonth(end.getMonth() + rentMonths);
+
+  setRentEnd(end.toISOString().slice(0, 10));
+}, [rentStart, rentMonths]);
 
   const handleRent = async () => {
     if (!user) return alert("Bạn cần đăng nhập để thuê căn hộ.");
@@ -166,7 +163,6 @@ const ApartmentDetailPage = () => {
 
   return (
     <div className="max-w-6xl mx-auto pt-[80px] pb-20 px-6">
-
       {/* IMAGE GALLERY */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
         <div className="md:col-span-3 h-[400px] rounded-xl overflow-hidden">
@@ -200,25 +196,36 @@ const ApartmentDetailPage = () => {
           <h2 className="font-semibold mb-3">Thuê căn hộ</h2>
 
           <label className="block mb-2">
-            Số tháng thuê:
+            Ngày bắt đầu:
             <input
-              type="number"
-              min={1}
-              value={rentMonths}
-              onChange={(e) => setRentMonths(Number(e.target.value))}
+              type="date"
+              value={rentStart}
+              onChange={(e) => setRentStart(e.target.value)}
               className="border p-2 rounded w-full"
             />
           </label>
 
-          <p className="mb-2">
-            Ngày bắt đầu: <strong>{rentStart}</strong> (luôn là ngày 5)
-          </p>
+          <label className="block mb-2">
+            Thời hạn thuê:
+            <select
+              value={rentMonths}
+              onChange={(e) => setRentMonths(Number(e.target.value))}
+              className="border p-2 rounded w-full"
+            >
+              <option value={3}>3 tháng</option>
+              <option value={6}>6 tháng</option>
+              <option value={9}>9 tháng</option>
+              <option value={12}>12 tháng</option>
+            </select>
+          </label>
+
           <p className="mb-2">
             Ngày kết thúc: <strong>{rentEnd}</strong>
           </p>
 
           <p className="mb-2 font-semibold">
-            Tổng tiền: <strong>{(apartment.price * rentMonths).toLocaleString()} đ</strong>
+            Tổng tiền:{" "}
+            <strong>{(apartment.price * rentMonths).toLocaleString()} đ</strong>
           </p>
 
           <button
@@ -241,7 +248,10 @@ const ApartmentDetailPage = () => {
         ) : (
           <div className="space-y-4">
             {reviews.map((r) => (
-              <div key={r._id} className="border p-4 rounded-xl bg-gray-50 shadow-sm">
+              <div
+                key={r._id}
+                className="border p-4 rounded-xl bg-gray-50 shadow-sm"
+              >
                 <p className="font-semibold">{r.user?.name || "Người dùng"}</p>
                 <p className="text-yellow-600 mb-1">⭐ {r.rating} / 5</p>
                 <p>{r.content}</p>

@@ -100,7 +100,7 @@ const Navbar = () => {
               <>
                 {user.role === "resident" && (
                   <Link to="/my-rentals" className="border border-green-700 text-green-700 px-3 py-1 rounded-md text-sm hover:bg-green-700 hover:text-white transition">
-                    Quản lý hợp đồng
+                    Hợp đồng của tôi
                   </Link>
                 )}
 
