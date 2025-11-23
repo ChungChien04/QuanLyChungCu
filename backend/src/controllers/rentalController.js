@@ -3,23 +3,27 @@ const Apartment = require("../models/apartmentModel");
 const sendEmail = require("../utils/sendEmail"); 
 // 1️⃣ User tạo đơn thuê
 exports.createRental = async (req, res) => {
-  const { apartmentId, startDate, endDate } = req.body;
+  const { apartmentId, months, startDate, endDate } = req.body;
+
   try {
     const apartment = await Apartment.findById(apartmentId);
-    if (!apartment) return res.status(404).json({ message: "Căn hộ không tồn tại." });
-    if (apartment.status !== "available") 
+
+    if (!apartment) 
+      return res.status(404).json({ message: "Căn hộ không tồn tại." });
+
+    if (apartment.status !== "available")
       return res.status(400).json({ message: "Căn hộ hiện không thể thuê." });
 
     const rental = await Rental.create({
       apartment: apartment._id,
       user: req.user._id,
-      startDate,
-      endDate,
-      totalPrice: apartment.price,
-      status: "pending"
+      months,
+      startDate,   // ⭐ THÊM
+      endDate,     // ⭐ THÊM
+      status: "pending",
+      totalPrice: apartment.price * months,
     });
 
-    // Lock căn hộ ngay khi user bấm thuê
     apartment.status = "reserved"; 
     await apartment.save();
 
@@ -28,7 +32,6 @@ exports.createRental = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
 
 
 exports.getMyRentals = async (req, res) => {
@@ -203,28 +206,36 @@ exports.cancelRental = async (req, res) => {
 
     const { finish } = req.body;
 
-    // Nếu Admin hoàn tất thủ tục hủy
+    // 1️⃣ Admin xác nhận kết thúc hủy (trả phòng)
     if (finish && rental.status === "cancelling") {
       rental.status = "cancelled";
+
       if (rental.apartment) {
-        rental.apartment.status = "available";
+        rental.apartment.status = "available";   // 🔥 trả phòng
         await rental.apartment.save();
       }
+
       await rental.save();
-      return res.json({ message: "Đơn thuê đã bị hủy hoàn tất.", rental });
+      return res.json({ message: "Hủy hợp đồng hoàn tất.", rental });
     }
 
-    // Nếu hủy thông thường
-    if (rental.status === "approved" || rental.status === "rented") {
-      rental.status = "cancelling"; // trạng thái chờ hủy
-    } else {
+    // 2️⃣ User hoặc admin gửi yêu cầu hủy
+    if (["approved", "rented", "reserved"].includes(rental.status)) {
+      rental.status = "cancelling";   // chờ xác nhận admin
+    } 
+    else {
+      // 3️⃣ Các trạng thái còn lại → hủy trực tiếp
       rental.status = "cancelled";
-      if (rental.apartment && rental.status !== "rented") rental.apartment.status = "available";
-      if (rental.apartment) await rental.apartment.save();
+
+      if (rental.apartment) {
+        rental.apartment.status = "available";  // 🔥 trả phòng
+        await rental.apartment.save();
+      }
     }
 
     await rental.save();
-    res.json({ message: "Đơn thuê đang hủy.", rental });
+    res.json({ message: "Đơn thuê đã chuyển sang trạng thái hủy.", rental });
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
