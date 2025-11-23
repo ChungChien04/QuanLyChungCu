@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import useAuth from "../hooks/useAuth";
+import RentApartmentModal from "../components/RentApartmentModal";
 
 const API_BASE = "http://localhost:5000";
 
@@ -25,9 +26,7 @@ const ApartmentDetailPage = () => {
   const [editRating, setEditRating] = useState(5);
 
   // ===== RENTAL STATES =====
-  const [rentMonths, setRentMonths] = useState(1);
-  const [rentStart, setRentStart] = useState("");
-  const [rentEnd, setRentEnd] = useState("");
+  const [openRentModal, setOpenRentModal] = useState(false);
 
   // ===== IMAGE HANDLER =====
   const getImageUrl = (img) => {
@@ -43,7 +42,10 @@ const ApartmentDetailPage = () => {
         setLoading(true);
         const { data } = await axios.get(`${API_BASE}/api/apartments/${id}`);
         setApartment(data);
-        setActiveIndex(0);
+
+        if (data.images?.length > 0) setActiveIndex(0);
+        else setActiveIndex(-1);
+
         setError("");
       } catch {
         setError("Không tìm thấy căn hộ hoặc lỗi server.");
@@ -121,48 +123,37 @@ const ApartmentDetailPage = () => {
     }
   };
 
-  // ===== RENT HANDLERS =====
-  useEffect(() => {
-    // Xác định ngày bắt đầu = ngày 5
-    const today = new Date();
-    let startMonth = today.getMonth();
-    if (today.getDate() > 5) startMonth += 1;
-    const start = new Date(today.getFullYear(), startMonth, 5);
-    setRentStart(start.toISOString().slice(0, 10));
-
-    // Tính ngày kết thúc
-    const end = new Date(start);
-    end.setMonth(end.getMonth() + rentMonths);
-    setRentEnd(end.toISOString().slice(0, 10));
-  }, [rentMonths]);
-
-  const handleRent = async () => {
+  // ===== HANDLE RENT FROM MODAL =====
+  const handleRentConfirm = async (months, startDate, endDate) => {
     if (!user) return alert("Bạn cần đăng nhập để thuê căn hộ.");
+
     try {
-      const { data } = await axios.post(
+      await axios.post(
         `${API_BASE}/api/rentals`,
         {
           apartmentId: apartment._id,
-          startDate: rentStart,
-          endDate: rentEnd,
-          totalPrice: apartment.price * rentMonths,
+          startDate,
+          endDate,
+          totalPrice: apartment.price * months,
+          months,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
+      setOpenRentModal(false);
       alert("Đơn thuê đã được gửi! Chờ admin duyệt.");
     } catch (err) {
       alert(err.response?.data?.message || "Không thể tạo đơn thuê.");
     }
   };
 
+  // ===== UI =====
+
   if (loading) return <p className="text-center mt-10">Đang tải...</p>;
   if (error) return <p className="text-center text-red-600 mt-10">{error}</p>;
   if (!apartment) return <p className="text-center mt-10">Không tìm thấy.</p>;
 
-  const mainImage =
-    apartment.images?.length > 0
-      ? getImageUrl(apartment.images[activeIndex])
-      : "https://placehold.co/800x500";
+  const mainImage = getImageUrl(apartment.images?.[activeIndex] || null);
 
   return (
     <div className="max-w-6xl mx-auto pt-[80px] pb-20 px-6">
@@ -172,13 +163,16 @@ const ApartmentDetailPage = () => {
         <div className="md:col-span-3 h-[400px] rounded-xl overflow-hidden">
           <img src={mainImage} className="w-full h-full object-cover" />
         </div>
+
         <div className="grid grid-cols-2 gap-3 md:col-span-1">
-          {apartment.images?.slice(0, 4).map((img, i) => (
+          {(apartment.images || []).map((img, index) => (
             <img
-              key={i}
+              key={index}
               src={getImageUrl(img)}
-              className="h-48 w-full object-cover rounded-xl cursor-pointer hover:opacity-80"
-              onClick={() => setActiveIndex(i)}
+              className={`h-48 w-full object-cover rounded-xl cursor-pointer hover:opacity-80 ${
+                activeIndex === index ? "ring-4 ring-green-500" : ""
+              }`}
+              onClick={() => setActiveIndex(index)}
             />
           ))}
         </div>
@@ -194,41 +188,23 @@ const ApartmentDetailPage = () => {
         </div>
       </div>
 
-      {/* RENTAL SECTION */}
+      {/* RENT BUTTON */}
       {user?.role !== "admin" && apartment.status === "available" && (
-        <div className="mb-8 p-4 border rounded-xl bg-white shadow-sm max-w-md">
-          <h2 className="font-semibold mb-3">Thuê căn hộ</h2>
-
-          <label className="block mb-2">
-            Số tháng thuê:
-            <input
-              type="number"
-              min={1}
-              value={rentMonths}
-              onChange={(e) => setRentMonths(Number(e.target.value))}
-              className="border p-2 rounded w-full"
-            />
-          </label>
-
-          <p className="mb-2">
-            Ngày bắt đầu: <strong>{rentStart}</strong> (luôn là ngày 5)
-          </p>
-          <p className="mb-2">
-            Ngày kết thúc: <strong>{rentEnd}</strong>
-          </p>
-
-          <p className="mb-2 font-semibold">
-            Tổng tiền: <strong>{(apartment.price * rentMonths).toLocaleString()} đ</strong>
-          </p>
-
-          <button
-            onClick={handleRent}
-            className="mt-2 bg-green-700 text-white px-4 py-2 rounded-xl hover:bg-green-800"
-          >
-            Thuê căn hộ
-          </button>
-        </div>
+        <button
+          onClick={() => setOpenRentModal(true)}
+          className="bg-green-700 text-white w-1/6 py-3 rounded-xl font-semibold hover:bg-green-800 shadow"
+        >
+          Thuê căn hộ
+        </button>
       )}
+
+      {/* ========== RENT MODAL ========== */}
+      <RentApartmentModal
+        open={openRentModal}
+        apartment={apartment}
+        onClose={() => setOpenRentModal(false)}
+        onConfirm={handleRentConfirm}
+      />
 
       {/* REVIEWS SECTION */}
       <div className="mt-10">
