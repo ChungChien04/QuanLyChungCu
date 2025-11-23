@@ -24,11 +24,17 @@ export default function AdminApartmentPage() {
     utilities: "",
     description: "",
     status: "available",
-    featured: false, // ⭐ FEATURED
+    featured: false,
   });
 
+  // Ảnh upload mới
   const [images, setImages] = useState([]);
+
+  // Preview để UI hiển thị
   const [previewImages, setPreviewImages] = useState([]);
+
+  // Ảnh cũ (để gửi lên backend)
+  const [oldImages, setOldImages] = useState([]);
 
   const token = localStorage.getItem("userToken");
   const axiosAuth = axios.create({
@@ -54,23 +60,25 @@ export default function AdminApartmentPage() {
   }, []);
 
   const onChangeForm = (e) => {
-    const value =
-      e.target.type === "checkbox" ? e.target.checked : e.target.value;
-
+    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
     setForm((prev) => ({ ...prev, [e.target.name]: value }));
   };
 
   const onChangeImages = (e) => {
     const files = Array.from(e.target.files);
     setImages((prev) => [...prev, ...files]);
-    setPreviewImages((prev) => [
-      ...prev,
-      ...files.map((f) => URL.createObjectURL(f)),
-    ]);
+    setPreviewImages((prev) => [...prev, ...files.map((f) => URL.createObjectURL(f))]);
   };
 
   const removePreviewImage = (index) => {
+    const removed = previewImages[index];
+
     setPreviewImages((prev) => prev.filter((_, i) => i !== index));
+
+    // XÓA ẢNH CŨ
+    setOldImages((prev) => prev.filter((img) => getImageUrl(img) !== removed));
+
+    // XÓA ẢNH MỚI
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -86,55 +94,70 @@ export default function AdminApartmentPage() {
       utilities: "",
       description: "",
       status: "available",
-      featured: false, // ⭐ RESET FEATURED
+      featured: false,
     });
+
     setImages([]);
     setPreviewImages([]);
+    setOldImages([]);
     setEditingId(null);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    try {
-      const fd = new FormData();
-      Object.entries(form).forEach(([key, value]) => {
-        fd.append(key, value);
-      });
+  try {
+    const fd = new FormData();
 
-      if (form.utilities.trim() !== "") {
-        fd.set(
-          "utilities",
-          JSON.stringify(
-            form.utilities.split(",").map((u) => u.trim())
-          )
-        );
-      }
+    Object.entries(form).forEach(([key, value]) => fd.append(key, value));
 
-      images.forEach((img) => fd.append("images", img));
+    if (form.utilities.trim() !== "") {
+      fd.set(
+        "utilities",
+        JSON.stringify(form.utilities.split(",").map((u) => u.trim()))
+      );
+    }
 
-      let res;
-      if (editingId) {
-        res = await axiosAuth.put(`${API_URL}/${editingId}`, fd);
-        setApartments((prev) =>
-          prev.map((a) => (a._id === editingId ? res.data : a))
-        );
+    // gửi danh sách ảnh cũ còn giữ lại
+    fd.append("oldImages", JSON.stringify(oldImages));
+
+    // gửi ảnh mới
+    images.forEach((img) => fd.append("images", img));
+
+    let res;
+    if (editingId) {
+      res = await axiosAuth.put(`${API_URL}/${editingId}`, fd);
+      setApartments((prev) =>
+        prev.map((a) => (a._id === editingId ? res.data : a))
+      );
+
+      // ❗ ĐÓNG MODAL TRƯỚC
+      resetForm();
+      setShowModal(false);
+
+      // ❗ SAU 50ms mới hiện alert để tránh kẹt render
+      setTimeout(() => {
         alert("Cập nhật thành công!");
-      } else {
-        res = await axiosAuth.post(API_URL, fd);
-        setApartments((prev) => [...prev, res.data]);
-        alert("Thêm mới thành công!");
-      }
+      }, 50);
+
+    } else {
+      res = await axiosAuth.post(API_URL, fd);
+      setApartments((prev) => [...prev, res.data]);
 
       resetForm();
       setShowModal(false);
-    } catch {
-      alert("Lỗi lưu căn hộ!");
+      console.log("Cập nhật thành công!");
     }
-  };
+
+  } catch (err) {
+    console.log(err);
+    alert("Lỗi lưu căn hộ!");
+  }
+};
 
   const handleEdit = (apt) => {
     setEditingId(apt._id);
+
     setForm({
       title: apt.title,
       area: apt.area,
@@ -146,11 +169,18 @@ export default function AdminApartmentPage() {
       utilities: apt.utilities?.join(", ") || "",
       description: apt.description,
       status: apt.status,
-      featured: apt.featured || false, // ⭐ SET FEATURED
+      featured: apt.featured || false,
     });
 
+    // Ảnh mới reset
     setImages([]);
-    setPreviewImages([]);
+
+    // lưu ảnh cũ
+    setOldImages(apt.images || []);
+
+    // load preview ảnh cũ
+    setPreviewImages(apt.images?.map((img) => getImageUrl(img)) || []);
+
     setShowModal(true);
   };
 
@@ -172,7 +202,6 @@ export default function AdminApartmentPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-10">
-
       {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-green-700">Quản lý căn hộ</h1>
@@ -192,7 +221,6 @@ export default function AdminApartmentPage() {
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-4">
           <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl p-4 relative">
-
             <button
               onClick={() => {
                 setShowModal(false);
@@ -208,47 +236,98 @@ export default function AdminApartmentPage() {
             </h2>
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input
+                name="title"
+                value={form.title}
+                onChange={onChangeForm}
+                placeholder="Tên căn hộ"
+                className="border p-2.5 rounded-xl"
+                required
+              />
 
-              <input name="title" value={form.title} onChange={onChangeForm}
-                placeholder="Tên căn hộ" className="border p-2.5 rounded-xl" required />
+              <input
+                name="area"
+                type="number"
+                value={form.area}
+                onChange={onChangeForm}
+                placeholder="Diện tích (m²)"
+                className="border p-2.5 rounded-xl"
+                required
+              />
 
-              <input name="area" type="number" value={form.area} onChange={onChangeForm}
-                placeholder="Diện tích (m²)" className="border p-2.5 rounded-xl" required />
+              <input
+                name="price"
+                type="number"
+                value={form.price}
+                onChange={onChangeForm}
+                placeholder="Giá thuê"
+                className="border p-2.5 rounded-xl"
+                required
+              />
 
-              <input name="price" type="number" value={form.price} onChange={onChangeForm}
-                placeholder="Giá thuê" className="border p-2.5 rounded-xl" required />
-
-              <select name="status" value={form.status} onChange={onChangeForm}
-                className="border p-2.5 rounded-xl">
+              <select
+                name="status"
+                value={form.status}
+                onChange={onChangeForm}
+                className="border p-2.5 rounded-xl"
+              >
                 <option value="available">Còn trống</option>
                 <option value="rented">Đang thuê</option>
                 <option value="sold">Đã bán</option>
               </select>
 
-              <input name="bedrooms" type="number" value={form.bedrooms}
-                onChange={onChangeForm} placeholder="Phòng ngủ"
-                className="border p-2.5 rounded-xl" />
+              <input
+                name="bedrooms"
+                type="number"
+                value={form.bedrooms}
+                onChange={onChangeForm}
+                placeholder="Phòng ngủ"
+                className="border p-2.5 rounded-xl"
+              />
 
-              <input name="bathrooms" type="number" value={form.bathrooms}
-                onChange={onChangeForm} placeholder="Phòng vệ sinh"
-                className="border p-2.5 rounded-xl" />
+              <input
+                name="bathrooms"
+                type="number"
+                value={form.bathrooms}
+                onChange={onChangeForm}
+                placeholder="Phòng vệ sinh"
+                className="border p-2.5 rounded-xl"
+              />
 
-              <input name="address" value={form.address} onChange={onChangeForm}
-                placeholder="Địa chỉ" className="border p-2.5 rounded-xl md:col-span-2" />
+              <input
+                name="address"
+                value={form.address}
+                onChange={onChangeForm}
+                placeholder="Địa chỉ"
+                className="border p-2.5 rounded-xl md:col-span-2"
+              />
 
-              <input name="floor" type="number" value={form.floor}
-                onChange={onChangeForm} placeholder="Tầng"
-                className="border p-2.5 rounded-xl" />
+              <input
+                name="floor"
+                type="number"
+                value={form.floor}
+                onChange={onChangeForm}
+                placeholder="Tầng"
+                className="border p-2.5 rounded-xl"
+              />
 
-              <input name="utilities" value={form.utilities} onChange={onChangeForm}
+              <input
+                name="utilities"
+                value={form.utilities}
+                onChange={onChangeForm}
                 placeholder="Tiện ích (ngăn cách bằng dấu phẩy)"
-                className="border p-2.5 rounded-xl md:col-span-2" />
+                className="border p-2.5 rounded-xl md:col-span-2"
+              />
 
-              <textarea name="description" value={form.description}
-                onChange={onChangeForm} placeholder="Mô tả căn hộ"
-                className="border p-2.5 rounded-xl md:col-span-2" />
+              <textarea
+                name="description"
+                value={form.description}
+                onChange={onChangeForm}
+                placeholder="Mô tả căn hộ"
+                className="border p-2.5 rounded-xl md:col-span-2"
+              />
 
-              {/* ⭐ FEATURED CHECKBOX */}
+              {/* FEATURED */}
               <label className="flex items-center gap-2 md:col-span-2">
                 <input
                   type="checkbox"
@@ -263,8 +342,12 @@ export default function AdminApartmentPage() {
               <div className="md:col-span-2">
                 <label className="block mb-1 font-medium">Ảnh căn hộ:</label>
 
-                <input type="file" multiple onChange={onChangeImages}
-                  className="border p-2.5 rounded-xl w-full" />
+                <input
+                  type="file"
+                  multiple
+                  onChange={onChangeImages}
+                  className="border p-2.5 rounded-xl w-full"
+                />
 
                 {previewImages.length > 0 && (
                   <div className="flex gap-3 mt-3 flex-wrap">
@@ -272,21 +355,15 @@ export default function AdminApartmentPage() {
                       <div key={i} className="relative">
                         <button
                           onClick={() => removePreviewImage(i)}
-                          className="absolute -top-2 -right-2 bg-red-600 text-white w-6 h-6 rounded-full 
-                          text-sm flex items-center justify-center shadow hover:bg-red-700"
+                          className="absolute -top-2 -right-2 bg-red-600 text-white w-6 h-6 rounded-full text-sm flex items-center justify-center shadow hover:bg-red-700"
                         >
                           ×
                         </button>
-
-                        <img
-                          src={src}
-                          className="w-20 h-20 rounded-xl border object-cover"
-                        />
+                        <img src={src} className="w-20 h-20 rounded-xl border object-cover" />
                       </div>
                     ))}
                   </div>
                 )}
-
               </div>
 
               <div className="flex justify-end gap-3 md:col-span-2">
@@ -305,7 +382,6 @@ export default function AdminApartmentPage() {
                   {editingId ? "Cập nhật" : "Thêm mới"}
                 </button>
               </div>
-
             </form>
           </div>
         </div>
@@ -324,7 +400,7 @@ export default function AdminApartmentPage() {
                 <th className="p-3 text-left">Giá</th>
                 <th className="p-3 text-left">Trạng thái</th>
                 <th className="p-3 text-left">Ảnh</th>
-                <th className="p-3 text-left">Nổi bật</th> {/* ⭐ */}
+                <th className="p-3 text-left">Nổi bật</th>
                 <th className="p-3 text-right">Hành động</th>
               </tr>
             </thead>
@@ -349,7 +425,6 @@ export default function AdminApartmentPage() {
                     </div>
                   </td>
 
-                  {/* ⭐ HIỂN THỊ FEATURED */}
                   <td className="p-3">
                     {apt.featured ? (
                       <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded">
@@ -380,7 +455,6 @@ export default function AdminApartmentPage() {
                 </tr>
               ))}
             </tbody>
-
           </table>
         )}
 
@@ -399,9 +473,7 @@ export default function AdminApartmentPage() {
               key={i}
               onClick={() => fetchApartments(i + 1)}
               className={`px-3 py-1 border rounded-xl ${
-                currentPage === i + 1
-                  ? "bg-green-700 text-white"
-                  : "hover:bg-gray-100"
+                currentPage === i + 1 ? "bg-green-700 text-white" : "hover:bg-gray-100"
               }`}
             >
               {i + 1}
@@ -416,7 +488,6 @@ export default function AdminApartmentPage() {
             Next
           </button>
         </div>
-
       </div>
     </div>
   );

@@ -132,16 +132,61 @@ exports.createApartment = async (req, res) => {
     res.status(500).json({ message: "Lỗi khi tạo căn hộ." });
   }
 };
+// ==============================
+// 5) UPDATE (FIX IMAGE DELETE + REPLACE)
+// ==============================
+const fs = require("fs");
+const path = require("path");
 
-// ==============================
-// 5) UPDATE
-// ==============================
 exports.updateApartment = async (req, res) => {
   try {
-    const apt = await Apartment.findById(req.params.id);
-    if (!apt)
-      return res.status(404).json({ message: "Không tìm thấy căn hộ." });
+    const id = req.params.id;
 
+    const apt = await Apartment.findById(id);
+    if (!apt) return res.status(404).json({ message: "Không tìm thấy căn hộ." });
+
+    // =============================
+    // 1️⃣ OLD IMAGES TỪ FE GỬI LÊN
+    // =============================
+    let oldImages = [];
+    if (req.body.oldImages) {
+      try {
+        oldImages = JSON.parse(req.body.oldImages); 
+      } catch {
+        oldImages = [];
+      }
+    }
+
+    const originalImages = apt.images || [];
+
+    // =============================
+    // 2️⃣ ẢNH MỚI UPLOAD
+    // =============================
+    let newImages = [];
+    if (req.files && req.files.length > 0) {
+      newImages = req.files.map((f) => f.path.replace(/\\/g, "/"));
+    }
+
+    // =============================
+    // 3️⃣ DANH SÁCH ẢNH CUỐI CÙNG
+    // =============================
+    const finalImages = [...oldImages, ...newImages];
+
+    // =============================
+    // 4️⃣ XOÁ FILE ẢNH BỊ XÓA
+    // =============================
+    const removedImages = originalImages.filter((img) => !oldImages.includes(img));
+
+    removedImages.forEach((img) => {
+      const filePath = path.join(__dirname, "..", img);
+      if (fs.existsSync(filePath)) {
+        fs.unlink(filePath, () => {});
+      }
+    });
+
+    // =============================
+    // 5️⃣ UPDATE FIELD KHÁC
+    // =============================
     const {
       title, area, price, bedrooms, bathrooms,
       address, floor, description, status, featured
@@ -154,7 +199,6 @@ exports.updateApartment = async (req, res) => {
     if (bathrooms !== undefined) apt.bathrooms = bathrooms;
     if (description !== undefined) apt.description = description;
     if (status !== undefined) apt.status = status;
-
     if (featured !== undefined)
       apt.featured = featured === "true" || featured === true;
 
@@ -165,22 +209,16 @@ exports.updateApartment = async (req, res) => {
     // Utilities
     if (req.body.utilities) {
       let list = [];
-
-      if (Array.isArray(req.body.utilities)) list = req.body.utilities;
-      else {
-        try {
-          list = JSON.parse(req.body.utilities);
-        } catch {
-          list = [req.body.utilities];
-        }
+      try {
+        list = JSON.parse(req.body.utilities);
+      } catch {
+        list = [req.body.utilities];
       }
-
       apt.utilities = list;
     }
 
-    // Images
-    const newImages = req.files ? req.files.map((f) => f.path) : [];
-    if (newImages.length > 0) apt.images = [...apt.images, ...newImages];
+    // set ảnh cuối cùng
+    apt.images = finalImages;
 
     const updated = await apt.save();
     res.json(updated);
@@ -191,17 +229,20 @@ exports.updateApartment = async (req, res) => {
   }
 };
 
+
 // ==============================
 // 6) FEATURED
 // ==============================
 exports.getFeaturedApartments = async (req, res) => {
   try {
-    const apartments = await Apartment.find({ featured: true }).limit(6);
+    // bỏ limit(6)
+    const apartments = await Apartment.find({ featured: true });
     res.json({ apartments });
   } catch (err) {
     res.status(500).json({ message: "Không thể tải căn hộ nổi bật." });
   }
 };
+
 
 // ==============================
 // 7) DELETE
