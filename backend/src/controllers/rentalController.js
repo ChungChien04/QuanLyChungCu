@@ -1,18 +1,19 @@
 const Rental = require("../models/rentalModel");
 const Apartment = require("../models/apartmentModel");
 
-// 1️⃣ User tạo đơn thuê
+// =========================
+// 1) User tạo đơn thuê
+// =========================
 exports.createRental = async (req, res) => {
   const { apartmentId, months, startDate, endDate } = req.body;
 
   try {
     const apartment = await Apartment.findById(apartmentId);
-
     if (!apartment)
       return res.status(404).json({ message: "Căn hộ không tồn tại." });
 
     if (apartment.status !== "available")
-      return res.status(400).json({ message: "Căn hộ hiện không thể thuê." });
+      return res.status(400).json({ message: "Căn hộ hiện không còn trống." });
 
     const rental = await Rental.create({
       apartment: apartment._id,
@@ -20,11 +21,11 @@ exports.createRental = async (req, res) => {
       months,
       startDate,
       endDate,
-      status: "pending",
       totalPrice: apartment.price * months,
+      status: "pending",
     });
 
-    // GIỮ CHỖ căn hộ khi có đơn pending
+    // Giữ chỗ căn hộ
     apartment.status = "reserved";
     await apartment.save();
 
@@ -34,7 +35,9 @@ exports.createRental = async (req, res) => {
   }
 };
 
-// 2️⃣ Lấy danh sách hợp đồng của tôi
+// =========================
+// 2) Lấy rental của tôi
+// =========================
 exports.getMyRentals = async (req, res) => {
   try {
     const rentals = await Rental.find({ user: req.user._id })
@@ -47,38 +50,47 @@ exports.getMyRentals = async (req, res) => {
   }
 };
 
-// 3️⃣ Admin xem các đơn pending
+// =========================
+// 3) Admin: Pending rentals
+// =========================
 exports.getPendingRentals = async (req, res) => {
   try {
     const rentals = await Rental.find({ status: "pending" })
       .populate("apartment user");
+
     res.json(rentals);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// 4️⃣ Admin xem tất cả rental
+// =========================
+// 4) Admin: All rentals
+// =========================
 exports.getAllRentals = async (req, res) => {
   try {
     const rentals = await Rental.find()
       .populate("apartment user")
       .sort({ createdAt: -1 });
+
     res.json(rentals);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// 5️⃣ Admin duyệt
+// =========================
+// 5) Admin duyệt
+// =========================
 exports.approveRental = async (req, res) => {
   try {
     const rental = await Rental.findById(req.params.id).populate("apartment");
-
-    if (!rental)
-      return res.status(404).json({ message: "Không tìm thấy đơn thuê." });
+    if (!rental) return res.status(404).json({ message: "Không tìm thấy đơn thuê." });
 
     rental.status = "approved";
+
+    rental.apartment.status = "rented";
+    await rental.apartment.save();
     await rental.save();
 
     res.json(rental);
@@ -87,32 +99,40 @@ exports.approveRental = async (req, res) => {
   }
 };
 
-// 6️⃣ User ký hợp đồng
+// =========================
+// 6) User ký hợp đồng
+// =========================
 exports.signContract = async (req, res) => {
   try {
     const rental = await Rental.findById(req.params.id).populate("apartment");
+    if (!rental) return res.status(404).json({ message: "Không tìm thấy đơn thuê." });
 
-    if (!rental || rental.user.toString() !== req.user._id.toString())
-      return res.status(403).json({ message: "Không có quyền ký hợp đồng." });
+    if (rental.user.toString() !== req.user._id.toString())
+      return res.status(403).json({ message: "Bạn không có quyền ký hợp đồng." });
 
     if (rental.status !== "approved")
-      return res.status(400).json({ message: "Chỉ ký sau khi admin duyệt." });
+      return res.status(400).json({ message: "Hợp đồng chỉ ký sau khi được duyệt." });
 
-    rental.contractText = req.body.contractText;
+    rental.contractText = req.body.contractText || "";
     rental.contractSigned = true;
+    rental.status = "rented";
 
+    rental.apartment.status = "rented";
+    await rental.apartment.save();
     await rental.save();
 
     res.json({
-      message: "Ký hợp đồng thành công. Vui lòng thanh toán.",
-      rental
+      message: "Ký hợp đồng thành công!",
+      rental,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// 7️⃣ Lấy rental theo ID
+// =========================
+// 7) Lấy rental theo ID
+// =========================
 exports.getRentalById = async (req, res) => {
   try {
     const rental = await Rental.findById(req.params.id)
@@ -128,7 +148,9 @@ exports.getRentalById = async (req, res) => {
   }
 };
 
-// 8️⃣ Hủy rental (user hoặc admin)
+// =========================
+// 8) Admin / User hủy rental
+// =========================
 exports.cancelRental = async (req, res) => {
   try {
     const rental = await Rental.findById(req.params.id).populate("apartment");
@@ -137,39 +159,27 @@ exports.cancelRental = async (req, res) => {
 
     const { finish } = req.body;
 
-    // 1️⃣ Admin xác nhận hoàn tất hủy
+    // Admin hoàn tất hủy
     if (finish && rental.status === "cancelling") {
       rental.status = "cancelled";
-
-      if (rental.apartment) {
-        rental.apartment.status = "available"; // trả phòng
-        await rental.apartment.save();
-      }
-
+      rental.apartment.status = "available";
+      await rental.apartment.save();
       await rental.save();
-      return res.json({ message: "Hủy hợp đồng hoàn tất.", rental });
+
+      return res.json({ message: "Đã hoàn tất hủy hợp đồng.", rental });
     }
 
-    // 2️⃣ Yêu cầu hủy từ user/admin
-    // Các trạng thái có thể hủy → chuyển sang "cancelling"
+    // Các trạng thái có thể chuyển sang cancelling
     if (["approved", "rented", "reserved"].includes(rental.status)) {
       rental.status = "cancelling";
     } else {
-      // 3️⃣ Trường hợp pending hoặc khác → hủy thẳng, trả phòng
       rental.status = "cancelled";
-
-      if (rental.apartment) {
-        rental.apartment.status = "available";
-        await rental.apartment.save();
-      }
+      rental.apartment.status = "available";
+      await rental.apartment.save();
     }
 
     await rental.save();
-    res.json({
-      message: "Đơn thuê đã chuyển sang trạng thái hủy.",
-      rental
-    });
-
+    res.json({ message: "Đã yêu cầu hủy.", rental });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
