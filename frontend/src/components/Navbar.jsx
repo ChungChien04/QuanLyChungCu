@@ -15,6 +15,31 @@ const Navbar = () => {
     Number(localStorage.getItem("lastSeenNews") || 0)
   );
 
+  // -------------------------------
+  // ⚡ THÊM: Load hợp đồng của cư dân
+  // -------------------------------
+  const [myContracts, setMyContracts] = useState([]);
+
+  useEffect(() => {
+    if (!token || user?.role !== "resident") return;
+
+    axios
+      .get("/api/rentals/my-rentals", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setMyContracts(res.data))
+      .catch(() => {});
+  }, [token, user]);
+
+  // ⚡ Đếm hợp đồng được admin duyệt (status = approved)
+  const approvedCount = useMemo(() => {
+    return myContracts.filter(
+      (c) => c.status === "approved" && !c.contractSigned
+    ).length;
+  }, [myContracts]);
+  // -------------------------------
+
+
   // Load news
   useEffect(() => {
     if (!token) return;
@@ -143,9 +168,16 @@ const Navbar = () => {
                 {user.role === "resident" && (
                   <Link
                     to="/my-rentals"
-                    className="text-gray-700 hover:text-green-700 px-2"
+                    className="relative text-gray-700 hover:text-green-700 px-2"
                   >
                     Hợp đồng của tôi
+
+                    {/* 🔥 NÚT ĐỎ KHI ADMIN DUYỆT HỢP ĐỒNG */}
+                    {approvedCount > 0 && (
+                      <span className="absolute -top-1 -right-3 bg-red-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full shadow">
+                        {approvedCount}
+                      </span>
+                    )}
                   </Link>
                 )}
               </>
@@ -156,12 +188,10 @@ const Navbar = () => {
           <div className="flex items-center space-x-3">
             {user ? (
               <>
-                {/* Greeting */}
                 <span className="text-gray-700 font-medium">
                   Xin chào, {user.name}
                 </span>
 
-                {/* Admin menu */}
                 {user.role === "admin" && (
                   <>
                     <Link
