@@ -64,15 +64,24 @@ const Navbar = () => {
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-6">
 
-            <Link to="/" className="text-gray-700 hover:text-green-700 transition px-2">
+            <Link
+              to="/"
+              className="text-gray-700 hover:text-green-700 transition px-2"
+            >
               Trang chủ
             </Link>
 
-            <Link to="/chatbot" className="text-gray-700 hover:text-green-700 transition px-2">
+            <Link
+              to="/chatbot"
+              className="text-gray-700 hover:text-green-700 transition px-2"
+            >
               ChatBot AI
             </Link>
 
-            <Link to="/apartments" className="text-gray-700 hover:text-green-700 transition px-2">
+            <Link
+              to="/apartments"
+              className="text-gray-700 hover:text-green-700 transition px-2"
+            >
               Danh sách căn hộ
             </Link>
 
@@ -145,7 +154,6 @@ const Navbar = () => {
 
           {/* Right side */}
           <div className="flex items-center space-x-3">
-
             {user ? (
               <>
                 {/* Greeting */}

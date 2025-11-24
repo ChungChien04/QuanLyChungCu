@@ -25,7 +25,7 @@ const ApartmentDetailPage = () => {
   const [editContent, setEditContent] = useState("");
   const [editRating, setEditRating] = useState(5);
 
-  // ===== RENTAL STATES =====
+  // ===== RENTAL STATE =====
   const [openRentModal, setOpenRentModal] = useState(false);
 
   // ===== IMAGE HANDLER =====
@@ -96,7 +96,8 @@ const ApartmentDetailPage = () => {
   };
 
   const submitEdit = async () => {
-    if (!editContent.trim()) return alert("Nội dung đánh giá không được để trống.");
+    if (!editContent.trim())
+      return alert("Nội dung đánh giá không được để trống.");
 
     try {
       await axios.put(
@@ -157,7 +158,6 @@ const ApartmentDetailPage = () => {
 
   return (
     <div className="max-w-6xl mx-auto pt-[80px] pb-20 px-6">
-
       {/* IMAGE GALLERY */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
         <div className="md:col-span-3 h-[400px] rounded-xl overflow-hidden">
@@ -198,7 +198,7 @@ const ApartmentDetailPage = () => {
         </button>
       )}
 
-      {/* ========== RENT MODAL ========== */}
+      {/* RENT MODAL */}
       <RentApartmentModal
         open={openRentModal}
         apartment={apartment}
@@ -206,7 +206,7 @@ const ApartmentDetailPage = () => {
         onConfirm={handleRentConfirm}
       />
 
-      {/* REVIEWS SECTION */}
+      {/* ========== REVIEWS ========== */}
       <div className="mt-10">
         <h2 className="text-2xl font-bold text-indigo-700 mb-4">
           Đánh giá căn hộ
@@ -217,7 +217,10 @@ const ApartmentDetailPage = () => {
         ) : (
           <div className="space-y-4">
             {reviews.map((r) => (
-              <div key={r._id} className="border p-4 rounded-xl bg-gray-50 shadow-sm">
+              <div
+                key={r._id}
+                className="border p-4 rounded-xl bg-gray-50 shadow-sm"
+              >
                 <p className="font-semibold">{r.user?.name || "Người dùng"}</p>
                 <p className="text-yellow-600 mb-1">⭐ {r.rating} / 5</p>
                 <p>{r.content}</p>
