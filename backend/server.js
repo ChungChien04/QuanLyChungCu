@@ -8,10 +8,10 @@ const path = require('path');
 const createDefaultAdmin = require("./src/utils/createAdmin.js");
 const paymentRoutes = require("./src/routes/paymentRoutes");
 
-
 // Routes import
 const rentalRoutes = require("./src/routes/rentalRoutes"); 
 const newsRoutes = require("./src/routes/newsRoutes");
+const invoiceRoutes = require("./src/routes/invoiceRoutes"); 
 
 dotenv.config();
 
@@ -21,8 +21,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Static chuẩn - gộp từ file 2
+// Static chuẩn
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 // DB Connect
 const connectDB = async () => {
   try {
@@ -43,10 +44,11 @@ app.use('/api/chatbot', require('./src/routes/chatbotRoutes'));
 app.use('/api/reports', require('./src/routes/reportRoutes'));
 app.use('/api/reviews', require('./src/routes/reviewRoutes'));
 app.use("/api/payments", paymentRoutes);
-
-// 🍀 Giữ lại cả 2 route của hai bên
 app.use("/api/rentals", rentalRoutes); 
 app.use("/api/news", newsRoutes);
+
+// 👇 THÊM DÒNG NÀY: Đăng ký đường dẫn cho hóa đơn
+app.use("/api/invoices", invoiceRoutes);
 
 // Test route
 app.get('/', (req, res) => {

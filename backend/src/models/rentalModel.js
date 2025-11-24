@@ -27,7 +27,7 @@ const rentalSchema = new mongoose.Schema(
       type: String,
       enum: [
         "pending",
-        "reserved",     // giữ để không lỗi khi createRental
+        "reserved",    
         "approved",
         "rented",
         "cancelling",
@@ -38,7 +38,6 @@ const rentalSchema = new mongoose.Schema(
 
     contractSigned: { type: Boolean, default: false },
     paymentDone: { type: Boolean, default: false },
-    paymentQRCode: { type: String, default: "" },
   },
   { timestamps: true }
 );

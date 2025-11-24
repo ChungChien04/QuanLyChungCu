@@ -1,6 +1,6 @@
 const Rental = require("../models/rentalModel");
 const Apartment = require("../models/apartmentModel");
-
+const Invoice = require("../models/invoiceModel"); 
 // 1️⃣ User tạo đơn thuê
 exports.createRental = async (req, res) => {
   const { apartmentId, months, startDate, endDate } = req.body;
@@ -137,36 +137,57 @@ exports.cancelRental = async (req, res) => {
 
     const { finish } = req.body;
 
-    // 1️⃣ Admin xác nhận hoàn tất hủy
+    // ---------------------------------------------------------
+    // TRƯỜNG HỢP 1: Admin xác nhận hoàn tất hủy (Từ trạng thái 'cancelling')
+    // ---------------------------------------------------------
     if (finish && rental.status === "cancelling") {
       rental.status = "cancelled";
 
+      // Trả phòng
       if (rental.apartment) {
-        rental.apartment.status = "available"; // trả phòng
+        rental.apartment.status = "available"; 
         await rental.apartment.save();
       }
 
+      // 🔥 LOGIC MỚI: Hủy tất cả hóa đơn chưa thanh toán của hợp đồng này
+      await Invoice.updateMany(
+        { rental: rental._id, status: "unpaid" },
+        { status: "cancelled" }
+      );
+
       await rental.save();
-      return res.json({ message: "Hủy hợp đồng hoàn tất.", rental });
+      return res.json({ message: "Hủy hợp đồng hoàn tất. Các hóa đơn liên quan đã bị hủy.", rental });
     }
 
-    // 2️⃣ Yêu cầu hủy từ user/admin
-    // Các trạng thái có thể hủy → chuyển sang "cancelling"
+    // ---------------------------------------------------------
+    // TRƯỜNG HỢP 2: Yêu cầu hủy
+    // ---------------------------------------------------------
+    
+    // Nếu đang thuê/đã duyệt -> Chuyển sang chờ hủy (chưa hủy hóa đơn vội)
     if (["approved", "rented", "reserved"].includes(rental.status)) {
       rental.status = "cancelling";
     } else {
-      // 3️⃣ Trường hợp pending hoặc khác → hủy thẳng, trả phòng
+      // Nếu mới là pending -> Hủy luôn
       rental.status = "cancelled";
 
       if (rental.apartment) {
         rental.apartment.status = "available";
         await rental.apartment.save();
       }
+
+      // 🔥 LOGIC MỚI: Hủy hóa đơn ngay lập tức (nếu có lỡ tạo)
+      await Invoice.updateMany(
+        { rental: rental._id, status: "unpaid" },
+        { status: "cancelled" }
+      );
     }
 
     await rental.save();
+    
     res.json({
-      message: "Đơn thuê đã chuyển sang trạng thái hủy.",
+      message: rental.status === "cancelled" 
+        ? "Đơn thuê đã hủy thành công." 
+        : "Đơn thuê đang chờ xử lý hủy.",
       rental
     });
 

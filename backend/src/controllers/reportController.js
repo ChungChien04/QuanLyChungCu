@@ -1,7 +1,6 @@
 // /backend/src/controllers/reportController.js
 const User = require('../models/userModel');
 const Apartment = require('../models/apartmentModel');
-const Payment = require('../models/paymentModel');
 const Contract = require('../models/contractModel');
 
 exports.getDashboardStats = async (req, res) => {

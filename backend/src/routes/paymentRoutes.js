@@ -1,14 +1,19 @@
-// routes/paymentRoutes.js
 const express = require("express");
 const router = express.Router();
 const paymentController = require("../controllers/paymentController");
-// const { protect } = require("../middleware/authMiddleware"); 
-// Lưu ý: Route tạo URL cần protect, nhưng route return KHÔNG ĐƯỢC protect vì VNPay gọi vào
+const { protect, admin } = require("../middleware/authMiddleware");
+// Dùng khi khách hàng mới thuê nhà, cần đóng tiền cọc/tiền thuê lần đầu
+router.get("/create_payment_url/:id", protect, paymentController.createPaymentUrl);
 
-// Tạo URL thanh toán (Cần đăng nhập)
-router.get("/create_payment_url/:id", paymentController.createPaymentUrl); // Bỏ protect tạm thời nếu muốn test nhanh, nhưng nên giữ
+// Dùng khi khách hàng đóng tiền điện, nước, phí dịch vụ hàng tháng
+// Route này sẽ gọi hàm createInvoicePaymentUrl bên controller
+router.get("/create_invoice_payment_url/:id", protect, paymentController.createInvoicePaymentUrl);
 
-// VNPay Redirect về (Không cần token header vì trình duyệt redirect)
+// VNPay sẽ gọi vào đây sau khi khách thanh toán xong.
+// Controller sẽ tự kiểm tra mã "INV-" để biết là hóa đơn hay hợp đồng.
 router.get("/vnpay_return", paymentController.vnpayReturn);
 
+// Admin: Thanh toán thủ công
+router.put("/admin/manual-pay-rental/:id", protect, admin, paymentController.manualPayRental);
+router.put("/admin/manual-pay-invoice/:id", protect, admin, paymentController.manualPayInvoice);
 module.exports = router;
