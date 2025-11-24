@@ -35,7 +35,7 @@ function App() {
       {/* NAVBAR */}
       <Navbar />
 
-      {/* FIX navbar đè trang */}
+      {/* Avoid navbar overlap */}
       <div style={{ paddingTop: "80px" }}>
         <Routes>
           {/* HOME */}
@@ -48,8 +48,16 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/verify-otp" element={<VerifyOTPPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+          {/* LIST OF APARTMENTS (ĐẶT TRƯỚC) */}
           <Route path="/apartments" element={<ApartmentListPage />} />
+
+          {/* DETAIL ROUTE CHUẨN (CHATBOT & HỆ THỐNG MỚI DÙNG) */}
+          <Route path="/apartments/:id" element={<ApartmentDetailPage />} />
+
+          {/* DETAIL ROUTE CŨ - để tránh lỗi backward compatibility */}
           <Route path="/apartment/:id" element={<ApartmentDetailPage />} />
+
           <Route path="/google/callback" element={<GoogleCallback />} />
 
           {/* CLIENT - NEWS */}

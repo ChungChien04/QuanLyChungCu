@@ -216,6 +216,7 @@ const MyRentals = () => {
 
             {/* Nút thao tác */}
             <div className="flex flex-col justify-center gap-2 min-w-[140px]">
+              
               {/* Bước 1: Ký hợp đồng */}
               {r.status === "approved" && !r.contractSigned && (
                 <button
