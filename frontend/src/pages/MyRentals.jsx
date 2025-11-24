@@ -146,7 +146,7 @@ const MyRentals = () => {
 
   return (
     <div className="max-w-4xl mx-auto mt-20 p-4 pb-20">
-      <h1 className="text-2xl font-bold mb-6 text-center text-gray-800">
+      <h1 className="text-4xl font-bold mb-6 text-center text-green-700">
         Hợp đồng của tôi
       </h1>
       <div className="space-y-4">
@@ -250,9 +250,9 @@ const MyRentals = () => {
           </div>
         ))}
       </div>
-      // Trong file MyRentals.js
-      <SignContractModal
-        open={signModalOpen}
+      
+      <SignContractModal //  Trong file MyRentals.js
+        open={signModalOpen} 
         rental={selectedRental}
         defaultText={selectedRental?.contractText || ""}
         loading={actionLoading} // <--- THÊM DÒNG NÀY

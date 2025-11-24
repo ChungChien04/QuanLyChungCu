@@ -12,6 +12,7 @@ const vnp_HashSecret = "KZGUMEOKS3OFGMZ7XLEJUF1IRQL6V5R0";
 const vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 const vnp_ReturnUrl = "http://localhost:5000/api/payments/vnpay_return"; 
 
+
 // 1. Tạo URL thanh toán
 exports.createPaymentUrl = async (req, res) => {
   try {

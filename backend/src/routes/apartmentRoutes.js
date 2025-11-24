@@ -12,13 +12,18 @@ const {
   getApartmentById,
   createApartment,
   updateApartment,
-  deleteApartment
+  deleteApartment,
+  getFeaturedApartments
 } = apartmentController;
 
 // =============================
 // PUBLIC ROUTES
 // =============================
-router.get("/", getApartments);                  // hỗ trợ style mới
+
+// ⭐ ROUTE FEATURED — phải đặt TRƯỚC /:id để không bị nhầm với id
+router.get("/featured", getFeaturedApartments);
+
+router.get("/", getApartments);
 router.get("/search", searchApartments);
 router.get("/:id", getApartmentById);
 
@@ -29,7 +34,7 @@ router.post(
   "/",
   protect,
   admin,
-  upload.array("images", 10),     // gộp, cho phép tối đa
+  upload.array("images", 10),
   createApartment
 );
 
