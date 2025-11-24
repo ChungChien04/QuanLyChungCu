@@ -173,7 +173,7 @@ const HomePage = () => {
                           ? "Còn trống"
                           : apt.status === "rented"
                           ? "Đang thuê"
-                          : "Đang trong thời gian thuê"}
+                          : "Tạm khóa"}
                       </span>
                     </div>
                   </div>
