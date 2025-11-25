@@ -2,7 +2,23 @@ import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import useAuth from "../../hooks/useAuth";
 
-const API_URL = "http://localhost:5000"; // đổi nếu deploy
+const API_URL = "http://localhost:5000";
+
+/* ============================
+   TOAST COMPONENT
+============================= */
+const Toast = ({ message, type }) => {
+  if (!message) return null;
+
+  return (
+    <div
+      className={`fixed bottom-6 right-6 px-4 py-2 rounded-xl text-white shadow-lg z-50
+        ${type === "success" ? "bg-green-600" : "bg-red-600"}`}
+    >
+      {message}
+    </div>
+  );
+};
 
 const AdminNewsPage = () => {
   const { token } = useAuth();
@@ -10,37 +26,45 @@ const AdminNewsPage = () => {
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [toast, setToast] = useState({ message: "", type: "success" });
+  const showToast = (msg, type = "success") => {
+    setToast({ message: msg, type });
+    setTimeout(() => setToast({ message: "", type }), 2000);
+  };
+
   // Filters
   const [filterTitle, setFilterTitle] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
 
-  // Popup create/edit (dùng chung form)
+  // Popup
   const [showModal, setShowModal] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [editItem, setEditItem] = useState(null);
 
+  // Form fields
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [content, setContent] = useState("");
   const [status, setStatus] = useState(true);
 
-  // ✅ mới: nhiều ảnh
-  const [imageFiles, setImageFiles] = useState([]); // file mới chọn
-  const [existingImages, setExistingImages] = useState([]); // ảnh đã có (edit)
-const fixPath = (url) => {
-  if (!url) return "";
+  // Images
+  const [imageFiles, setImageFiles] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
 
-  // Nếu đã là URL đầy đủ → giữ nguyên
-  if (url.startsWith("http")) return url;
+  /* ============================
+        FIX ĐƯỜNG DẪN ẢNH
+  ============================== */
+  const fixPath = (url) => {
+    if (!url) return "";
+    if (url.startsWith("http")) return url;
+    return `${API_URL}/${url.replace(/^\//, "")}`;
+  };
 
-  // Nếu là dạng: /uploads/... → thêm domain
-  return `${API_URL}/${url.replace(/^\//, "")}`;
-};
   const loadNews = async () => {
     try {
       if (!token) return;
-
       setLoading(true);
+
       const { data } = await axios.get("/api/news", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -48,7 +72,7 @@ const fixPath = (url) => {
       setNews(data);
     } catch (err) {
       console.error(err);
-      alert("Không thể tải danh sách tin tức");
+      showToast("Không thể tải tin tức!", "error");
     } finally {
       setLoading(false);
     }
@@ -58,17 +82,15 @@ const fixPath = (url) => {
     if (token) loadNews();
   }, [token]);
 
-  // ✅ Upload nhiều ảnh, gọi /upload nhiều lần
   const uploadImages = async () => {
     if (imageFiles.length === 0) return [];
 
     const urls = [];
-
     for (const file of imageFiles) {
-      const formData = new FormData();
-      formData.append("image", file);
+      const fd = new FormData();
+      fd.append("image", file);
 
-      const { data } = await axios.post("/api/news/upload", formData, {
+      const { data } = await axios.post("/api/news/upload", fd, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -77,13 +99,15 @@ const fixPath = (url) => {
 
       urls.push(data.url);
     }
-
     return urls;
   };
 
-  // Create
+  /* ============================
+      CREATE NEWS
+  ============================== */
   const createNews = async () => {
-    if (!title || !content) return alert("Nhập tiêu đề và nội dung");
+    if (!title.trim()) return showToast("Vui lòng nhập tiêu đề!", "error");
+    if (!content.trim()) return showToast("Vui lòng nhập nội dung!", "error");
 
     try {
       const uploadedUrls = await uploadImages();
@@ -94,22 +118,25 @@ const fixPath = (url) => {
           title,
           description,
           content,
-          images: uploadedUrls, // ✅ lưu mảng
+          images: uploadedUrls,
           status,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      showToast("Thêm tin tức thành công!");
       setShowModal(false);
       resetForm();
       loadNews();
     } catch (err) {
       console.log(err);
-      alert("Không thể tạo tin mới");
+      showToast("Không thể tạo tin tức!", "error");
     }
   };
 
-  // Open edit popup
+  /* ============================
+      OPEN EDIT
+  ============================== */
   const openEdit = (item) => {
     setEditItem(item);
     setTitle(item.title);
@@ -117,20 +144,45 @@ const fixPath = (url) => {
     setContent(item.content || "");
     setStatus(item.status);
 
-    // ✅ load ảnh đã có
-    setExistingImages(item.images || (item.thumbnail ? [item.thumbnail] : []));
+    // ⭐ FIX QUAN TRỌNG: CHUẨN HÓA ẢNH CŨ THÀNH STRING[]
+    setExistingImages(
+      Array.isArray(item.images)
+        ? item.images.map((img) =>
+            typeof img === "string"
+              ? img
+              : img?.url || img?.path || ""
+          )
+        : []
+    );
+
     setImageFiles([]);
 
     setShowEdit(true);
   };
 
-  // Update
+  /* ============================
+      UPDATE NEWS
+  ============================== */
   const updateNews = async () => {
+    if (!title.trim()) return showToast("Tiêu đề không được để trống!", "error");
+    if (!content.trim()) return showToast("Nội dung không được để trống!", "error");
+
     try {
       const uploadedUrls = await uploadImages();
-
-      // ✅ merge ảnh cũ còn lại + ảnh mới upload
       const finalImages = [...existingImages, ...uploadedUrls];
+
+      const oldImages = editItem.images || [];
+
+      const noChange =
+        title.trim() === editItem.title &&
+        description.trim() === (editItem.description || "").trim() &&
+        content.trim() === (editItem.content || "").trim() &&
+        status === editItem.status &&
+        JSON.stringify(finalImages) === JSON.stringify(oldImages);
+
+      if (!imageFiles.length && noChange) {
+        return showToast("Bạn chưa thay đổi gì!", "error");
+      }
 
       await axios.put(
         `/api/news/${editItem._id}`,
@@ -144,44 +196,52 @@ const fixPath = (url) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      showToast("Cập nhật tin tức thành công!");
       setShowEdit(false);
       resetForm();
       loadNews();
     } catch (err) {
       console.log(err);
-      alert("Không thể cập nhật tin tức");
+      showToast("Không thể cập nhật tin tức!", "error");
     }
   };
 
+  /* ============================
+      DELETE NEWS
+  ============================== */
+  const deleteNews = async (id) => {
+    if (!window.confirm("Bạn có chắc muốn xoá?")) return;
+
+    try {
+      await axios.delete(`/api/news/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      showToast("Xoá thành công!");
+      loadNews();
+    } catch {
+      showToast("Không thể xoá tin tức!", "error");
+    }
+  };
+
+  /* ============================
+      TOGGLE STATUS
+  ============================== */
   const toggleStatus = async (item) => {
     try {
       const updated = await axios.put(
         `/api/news/${item._id}`,
-        {
-          ...item,
-          status: !item.status,
-        },
+        { ...item, status: !item.status },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setNews((prev) =>
         prev.map((n) => (n._id === item._id ? updated.data : n))
       );
-    } catch {
-      alert("Không thể đổi trạng thái");
-    }
-  };
 
-  // Delete
-  const deleteNews = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn xoá?")) return;
-    try {
-      await axios.delete(`/api/news/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      loadNews();
+      showToast("Đã đổi trạng thái!");
     } catch {
-      alert("Không thể xoá");
+      showToast("Không thể đổi trạng thái!", "error");
     }
   };
 
@@ -195,7 +255,6 @@ const fixPath = (url) => {
     setEditItem(null);
   };
 
-  // Filter logic
   const filteredNews = useMemo(() => {
     return news.filter((n) => {
       const byTitle = n.title
@@ -213,27 +272,28 @@ const fixPath = (url) => {
     });
   }, [news, filterTitle, filterStatus]);
 
-  // ✅ helper preview file mới
   const handlePickImages = (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
-
     setImageFiles((prev) => [...prev, ...files]);
-    e.target.value = null; // reset input để chọn lại cùng file vẫn trigger
+    e.target.value = null;
   };
 
-  // ✅ xoá ảnh mới chọn
   const removeNewImage = (idx) => {
     setImageFiles((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  // ✅ xoá ảnh cũ (edit)
   const removeExistingImage = (idx) => {
     setExistingImages((prev) => prev.filter((_, i) => i !== idx));
   };
 
+  /* ============================
+        RENDER
+  ============================== */
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
+      <Toast message={toast.message} type={toast.type} />
+
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-3xl font-bold text-gray-900">Tin tức</h1>
 
@@ -248,7 +308,7 @@ const fixPath = (url) => {
         </button>
       </div>
 
-      {/* Create Popup */}
+      {/* CREATE POPUP */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-4">
           <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-3xl relative">
@@ -277,37 +337,33 @@ const fixPath = (url) => {
                 onChange={(e) => setDescription(e.target.value)}
               />
 
-              {/* ✅ Upload nhiều ảnh */}
-              <div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handlePickImages}
-                  className="border p-2 rounded-xl w-full"
-                />
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handlePickImages}
+                className="border p-2 rounded-xl w-full"
+              />
 
-                {/* Preview ảnh mới */}
-                {imageFiles.length > 0 && (
-                  <div className="flex flex-wrap gap-3 mt-3">
-                    {imageFiles.map((file, idx) => (
-                      <div key={idx} className="relative">
-                        <button
-                          onClick={() => removeNewImage(idx)}
-                          className="absolute -top-2 -right-2 bg-red-600 text-white w-6 h-6 rounded-full text-sm flex items-center justify-center shadow"
-                        >
-                          ×
-                        </button>
+              {imageFiles.length > 0 && (
+                <div className="flex flex-wrap gap-3 mt-3">
+                  {imageFiles.map((file, idx) => (
+                    <div key={idx} className="relative">
+                      <button
+                        onClick={() => removeNewImage(idx)}
+                        className="absolute -top-2 -right-2 bg-red-600 text-white w-6 h-6 rounded-full text-sm flex items-center justify-center shadow"
+                      >
+                        ×
+                      </button>
 
-                        <img
-                          src={URL.createObjectURL(file)}
-                          className="w-32 h-24 object-cover rounded-xl border"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      <img
+                        src={URL.createObjectURL(file)}
+                        className="w-32 h-24 object-cover rounded-xl border"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <textarea
                 className="w-full border p-3 rounded-xl"
@@ -328,7 +384,7 @@ const fixPath = (url) => {
         </div>
       )}
 
-      {/* Edit Popup */}
+      {/* EDIT POPUP */}
       {showEdit && (
         <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-4">
           <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-3xl relative">
@@ -344,79 +400,75 @@ const fixPath = (url) => {
             <div className="space-y-4">
               <input
                 className="w-full border p-3 rounded-xl"
+                placeholder="Tiêu đề"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Tiêu đề"
               />
 
               <textarea
                 className="w-full border p-3 rounded-xl"
                 rows={2}
+                placeholder="Mô tả"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Mô tả"
               />
 
-              {/* ✅ Upload nhiều ảnh */}
-              <div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handlePickImages}
-                  className="border p-2 rounded-xl w-full"
-                />
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handlePickImages}
+                className="border p-2 rounded-xl w-full"
+              />
 
-                {/* Preview ảnh cũ */}
-{existingImages.length > 0 && (
-  <div className="flex flex-wrap gap-3 mt-3">
-    {existingImages.map((url, idx) => (
-      <div key={idx} className="relative">
-        <button
-          onClick={() => removeExistingImage(idx)}
-          className="absolute -top-2 -right-2 bg-red-600 text-white w-6 h-6 rounded-full text-sm flex items-center justify-center shadow"
-        >
-          ×
-        </button>
+              {/* Existing images */}
+              {existingImages.length > 0 && (
+                <div className="flex flex-wrap gap-3 mt-3">
+                  {existingImages.map((url, idx) => (
+                    <div key={idx} className="relative">
+                      <button
+                        onClick={() => removeExistingImage(idx)}
+                        className="absolute -top-2 -right-2 bg-red-600 text-white w-6 h-6 rounded-full text-sm flex items-center justify-center shadow"
+                      >
+                        ×
+                      </button>
 
-        <img
-          src={fixPath(url)}
-          className="w-32 h-24 object-cover rounded-xl border"
-        />
-      </div>
-    ))}
-  </div>
-)}
+                      <img
+                        src={fixPath(url)}
+                        className="w-32 h-24 object-cover rounded-xl border"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
 
+              {/* New images */}
+              {imageFiles.length > 0 && (
+                <div className="flex flex-wrap gap-3 mt-3">
+                  {imageFiles.map((file, idx) => (
+                    <div key={idx} className="relative">
+                      <button
+                        onClick={() => removeNewImage(idx)}
+                        className="absolute -top-2 -right-2 bg-red-600 text-white w-6 h-6 rounded-full text-sm flex items-center justify-center shadow"
+                      >
+                        ×
+                      </button>
 
-                {/* Preview ảnh mới */}
-                {imageFiles.length > 0 && (
-                  <div className="flex flex-wrap gap-3 mt-3">
-                    {imageFiles.map((file, idx) => (
-                      <div key={idx} className="relative">
-                        <button
-                          onClick={() => removeNewImage(idx)}
-                          className="absolute -top-2 -right-2 bg-red-600 text-white w-6 h-6 rounded-full text-sm flex items-center justify-center shadow"
-                        >
-                          ×
-                        </button>
-
-                        <img
-                          src={URL.createObjectURL(file)}
-                          className="w-32 h-24 object-cover rounded-xl border"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      <img
+                        src={URL.createObjectURL(file)}
+                        className="w-32 h-24 object-cover rounded-xl border"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <textarea
                 className="w-full border p-3 rounded-xl"
                 rows={6}
+                placeholder="Nội dung"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Nội dung"
               />
 
               <button
@@ -430,10 +482,9 @@ const fixPath = (url) => {
         </div>
       )}
 
-      {/* Filter */}
+      {/* Filters */}
       <div className="bg-white p-5 rounded-xl shadow-sm border mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
           <div>
             <label className="text-sm">Tiêu đề</label>
             <input
@@ -463,6 +514,7 @@ const fixPath = (url) => {
             >
               Lọc
             </button>
+
             <button
               onClick={() => {
                 setFilterTitle("");
@@ -473,7 +525,6 @@ const fixPath = (url) => {
               Xoá lọc
             </button>
           </div>
-
         </div>
       </div>
 
@@ -506,11 +557,7 @@ const fixPath = (url) => {
                   >
                     <td className="p-3">
                       <img
-                        src={
-                          firstImg.startsWith("http")
-                            ? firstImg
-                            : `${API_URL}${firstImg}`
-                        }
+                        src={fixPath(firstImg)}
                         className="w-28 h-20 object-cover rounded-lg"
                       />
                     </td>
@@ -547,6 +594,7 @@ const fixPath = (url) => {
                         >
                           Sửa
                         </button>
+
                         <button
                           onClick={() => deleteNews(item._id)}
                           className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm"
@@ -574,4 +622,3 @@ const fixPath = (url) => {
 };
 
 export default AdminNewsPage;
-

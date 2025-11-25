@@ -3,6 +3,22 @@ import axios from "axios";
 
 const API_URL = "http://localhost:5000/api/apartments";
 
+/* ============================
+   TOAST COMPONENT
+============================ */
+const Toast = ({ message, type }) => {
+  if (!message) return null;
+
+  return (
+    <div
+      className={`fixed bottom-6 right-6 px-4 py-2 rounded-xl text-white shadow-lg z-50
+        ${type === "success" ? "bg-green-600" : "bg-red-600"}`}
+    >
+      {message}
+    </div>
+  );
+};
+
 export default function AdminApartmentPage() {
   const [apartments, setApartments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,6 +28,8 @@ export default function AdminApartmentPage() {
 
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
+
+  const [toast, setToast] = useState({ message: "", type: "success" });
 
   const [form, setForm] = useState({
     title: "",
@@ -27,19 +45,19 @@ export default function AdminApartmentPage() {
     featured: false,
   });
 
-  // Ảnh upload mới
   const [images, setImages] = useState([]);
-
-  // Preview để UI hiển thị
   const [previewImages, setPreviewImages] = useState([]);
-
-  // Ảnh cũ (để gửi lên backend)
   const [oldImages, setOldImages] = useState([]);
 
   const token = localStorage.getItem("userToken");
   const axiosAuth = axios.create({
     headers: { Authorization: `Bearer ${token}` },
   });
+
+  const showToast = (msg, type = "success") => {
+    setToast({ message: msg, type });
+    setTimeout(() => setToast({ message: "", type }), 2000);
+  };
 
   const fetchApartments = async (page = 1) => {
     try {
@@ -49,7 +67,7 @@ export default function AdminApartmentPage() {
       setTotalPages(res.data.totalPages);
       setCurrentPage(res.data.currentPage);
     } catch {
-      alert("Lỗi tải căn hộ!");
+      showToast("Lỗi tải căn hộ!", "error");
     } finally {
       setLoading(false);
     }
@@ -74,11 +92,7 @@ export default function AdminApartmentPage() {
     const removed = previewImages[index];
 
     setPreviewImages((prev) => prev.filter((_, i) => i !== index));
-
-    // XÓA ẢNH CŨ
     setOldImages((prev) => prev.filter((img) => getImageUrl(img) !== removed));
-
-    // XÓA ẢNH MỚI
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -102,10 +116,74 @@ export default function AdminApartmentPage() {
     setOldImages([]);
     setEditingId(null);
   };
-
 const handleSubmit = async (e) => {
   e.preventDefault();
 
+  // =======================
+  // VALIDATION CHUNG
+  // =======================
+  if (!form.title.trim()) return showToast("Vui lòng nhập tên căn hộ!", "error");
+  if (!form.area) return showToast("Vui lòng nhập diện tích!", "error");
+  if (!form.price) return showToast("Vui lòng nhập giá!", "error");
+  if (!form.bedrooms) return showToast("Vui lòng nhập số phòng ngủ!", "error");
+  if (!form.bathrooms) return showToast("Vui lòng nhập số phòng vệ sinh!", "error");
+  if (!form.address.trim()) return showToast("Vui lòng nhập địa chỉ!", "error");
+  if (!form.description.trim()) return showToast("Vui lòng nhập mô tả!", "error");
+
+  // =======================
+  // VALIDATION CHO THÊM MỚI
+  // =======================
+  if (!editingId && !form.floor) {
+    return showToast("Vui lòng nhập tầng căn hộ!", "error");
+  }
+  if (!editingId && !form.utilities.trim()) {
+    return showToast("Vui lòng nhập tiện ích căn hộ!", "error");
+  }
+  if (!editingId && images.length === 0) {
+    return showToast("Vui lòng chọn ít nhất 1 ảnh căn hộ!", "error");
+  }
+
+  // =======================
+  // VALIDATION CHO SỬA: KHÔNG ĐƯỢC XOÁ TRẮNG FLOOR/UTILITIES
+  // =======================
+  if (editingId) {
+    if (form.floor === "" || form.floor === null) {
+      return showToast("Không được xoá trường Tầng!", "error");
+    }
+    if (form.utilities.trim() === "") {
+      return showToast("Không được xoá trường Tiện ích!", "error");
+    }
+  }
+
+  // =======================
+  // CHECK: KHÔNG CÓ THAY ĐỔI GÌ
+  // =======================
+  if (editingId) {
+    const old = apartments.find((a) => a._id === editingId);
+
+    const hasChange =
+      form.title !== old.title ||
+      form.area != old.area ||
+      form.price != old.price ||
+      form.bedrooms != old.bedrooms ||
+      form.bathrooms != old.bathrooms ||
+      form.address !== old.location?.address ||
+      form.floor != old.location?.floor ||
+      form.utilities !== (old.utilities?.join(", ") || "") ||
+      form.description !== old.description ||
+      form.status !== old.status ||
+      form.featured !== old.featured ||
+      images.length > 0 ||
+      JSON.stringify(oldImages) !== JSON.stringify(old.images || []);
+
+    if (!hasChange) {
+      return showToast("Bạn chưa thay đổi gì để cập nhật!", "error");
+    }
+  }
+
+  // =======================
+  // SUBMIT FORM
+  // =======================
   try {
     const fd = new FormData();
 
@@ -118,42 +196,32 @@ const handleSubmit = async (e) => {
       );
     }
 
-    // gửi danh sách ảnh cũ còn giữ lại
     fd.append("oldImages", JSON.stringify(oldImages));
-
-    // gửi ảnh mới
     images.forEach((img) => fd.append("images", img));
 
     let res;
+
     if (editingId) {
       res = await axiosAuth.put(`${API_URL}/${editingId}`, fd);
       setApartments((prev) =>
         prev.map((a) => (a._id === editingId ? res.data : a))
       );
-
-      // ❗ ĐÓNG MODAL TRƯỚC
-      resetForm();
-      setShowModal(false);
-
-      // ❗ SAU 50ms mới hiện alert để tránh kẹt render
-      setTimeout(() => {
-        alert("Cập nhật thành công!");
-      }, 50);
-
+      showToast("Cập nhật căn hộ thành công!", "success");
     } else {
       res = await axiosAuth.post(API_URL, fd);
       setApartments((prev) => [...prev, res.data]);
-
-      resetForm();
-      setShowModal(false);
-      console.log("Cập nhật thành công!");
+      showToast("Thêm căn hộ thành công!", "success");
     }
+
+    resetForm();
+    setShowModal(false);
 
   } catch (err) {
     console.log(err);
-    alert("Lỗi lưu căn hộ!");
+    showToast("Lỗi lưu căn hộ!", "error");
   }
 };
+
 
   const handleEdit = (apt) => {
     setEditingId(apt._id);
@@ -172,13 +240,8 @@ const handleSubmit = async (e) => {
       featured: apt.featured || false,
     });
 
-    // Ảnh mới reset
     setImages([]);
-
-    // lưu ảnh cũ
     setOldImages(apt.images || []);
-
-    // load preview ảnh cũ
     setPreviewImages(apt.images?.map((img) => getImageUrl(img)) || []);
 
     setShowModal(true);
@@ -190,8 +253,10 @@ const handleSubmit = async (e) => {
     try {
       await axiosAuth.delete(`${API_URL}/${id}`);
       setApartments((prev) => prev.filter((a) => a._id !== id));
+
+      showToast("Đã xoá!", "success");
     } catch {
-      alert("Lỗi xoá căn hộ!");
+      showToast("Lỗi xoá căn hộ!", "error");
     }
   };
 
@@ -202,6 +267,9 @@ const handleSubmit = async (e) => {
 
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-10">
+
+      <Toast message={toast.message} type={toast.type} />
+
       {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-green-700">Quản lý căn hộ</h1>
@@ -217,7 +285,7 @@ const handleSubmit = async (e) => {
         </button>
       </div>
 
-      {/* POPUP FORM */}
+      {/* MODAL */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-4">
           <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl p-4 relative">
@@ -327,7 +395,6 @@ const handleSubmit = async (e) => {
                 className="border p-2.5 rounded-xl md:col-span-2"
               />
 
-              {/* FEATURED */}
               <label className="flex items-center gap-2 md:col-span-2">
                 <input
                   type="checkbox"
@@ -338,7 +405,6 @@ const handleSubmit = async (e) => {
                 <span className="font-medium">Đặt làm căn hộ nổi bật</span>
               </label>
 
-              {/* Ảnh */}
               <div className="md:col-span-2">
                 <label className="block mb-1 font-medium">Ảnh căn hộ:</label>
 
