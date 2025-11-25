@@ -20,7 +20,9 @@ import AdminReviewPage from "./pages/admin/AdminReviewPage";
 import AdminApartmentPage from "./pages/admin/AdminApartmentPage";
 import AdminRentalsPage from "./pages/AdminRentalManagement";
 import AdminNewsPage from "./pages/admin/AdminNewsPage";
-
+// 👇 Import trang quản lý hóa đơn (Nhớ tạo file này trước)
+import AdminInvoiceManagement from "./pages/admin/AdminInvoiceManagement";
+import MyInvoicesPage from "./pages/MyInvoicesPage";
 // Client Pages
 import MyRentals from "./pages/MyRentals";
 import NewsListPage from "./pages/NewsListPage";
@@ -59,7 +61,14 @@ function App() {
           <Route path="/apartment/:id" element={<ApartmentDetailPage />} />
 
           <Route path="/google/callback" element={<GoogleCallback />} />
-
+          <Route
+            path="/my-invoices"
+            element={
+              <ProtectedRoute>
+                <MyInvoicesPage />
+              </ProtectedRoute>
+            }
+          />
           {/* CLIENT - NEWS */}
           <Route
             path="/news"
@@ -69,6 +78,8 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* ================= ADMIN ROUTES ================= */}
 
           {/* ADMIN - NEWS */}
           <Route
@@ -80,10 +91,10 @@ function App() {
             }
           />
 
-          {/* ADMIN PUBLIC */}
+          {/* ADMIN - REVIEWS (Public or Protected tùy bạn) */}
           <Route path="/admin/reviews" element={<AdminReviewPage />} />
 
-          {/* ADMIN PAGES */}
+          {/* ADMIN - APARTMENTS */}
           <Route
             path="/admin/apartments"
             element={
@@ -92,6 +103,8 @@ function App() {
               </AdminRoute>
             }
           />
+
+          {/* ADMIN - RENTALS */}
           <Route
             path="/admin/rentals"
             element={
@@ -101,7 +114,18 @@ function App() {
             }
           />
 
-          {/* PROTECTED CLIENT PAGES */}
+          {/* 🆕 ADMIN - INVOICES (QUẢN LÝ HÓA ĐƠN) */}
+          <Route
+            path="/admin/invoices"
+            element={
+              <AdminRoute>
+                <AdminInvoiceManagement />
+              </AdminRoute>
+            }
+          />
+
+          {/* ================= CLIENT ROUTES ================= */}
+
           <Route
             path="/profile"
             element={

@@ -341,7 +341,7 @@ const handleSubmit = async (e) => {
               >
                 <option value="available">Còn trống</option>
                 <option value="rented">Đang thuê</option>
-                <option value="reserved">Đang trong thời gian thuê</option>
+                <option value="reserved">Tạm Khóa</option>
               </select>
 
               <input

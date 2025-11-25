@@ -59,7 +59,23 @@ const AdminRentalManagement = () => {
     );
     fetchRentals();
   };
-
+  const handleManualPay = async (id) => {
+    if (!window.confirm("Xác nhận khách đã thanh toán tiền mặt/chuyển khoản?"))
+      return;
+    try {
+      await axios.put(
+        `${API_BASE}/api/payments/admin/manual-pay-rental/${id}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      alert("Cập nhật thành công!");
+      fetchRentals();
+    } catch (err) {
+      alert("Lỗi cập nhật");
+    }
+  };
   useEffect(() => {
     fetchRentals();
   }, []);
@@ -90,9 +106,7 @@ const AdminRentalManagement = () => {
           <tbody className="bg-white">
             {rentals.map((r) => (
               <tr key={r._id} className="border-b hover:bg-gray-50 transition">
-                <td className="px-4 py-2 font-medium">
-                  {r.apartment?.title}
-                </td>
+                <td className="px-4 py-2 font-medium">{r.apartment?.title}</td>
 
                 <td className="px-4 py-2">{r.user?.name}</td>
 
@@ -154,7 +168,14 @@ const AdminRentalManagement = () => {
 
                   {r.status === "approved" && (
                     <>
-                      <span className="text-gray-600">Chờ khách ký</span>
+                      <span className="text-gray-600 flex">Chờ khách ký</span>
+                      {r.contractSigned && !r.paymentDone && (
+                        <button
+                          onClick={() => handleManualPay(r._id)}
+                          className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition mr-2 ">
+                          Đã thu
+                        </button>
+                      )}
                       <button
                         onClick={() => handleCancel(r._id)}
                         className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition"

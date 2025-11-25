@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import useAuth from "../hooks/useAuth";
 import SignContractModal from "../components/SignContractModal";
-
-// Sửa lỗi "process is not defined" bằng cách dùng cứng localhost hoặc import.meta.env
+import InvoiceListModal from "../components/InvoiceListModal";
 const API_BASE = "http://localhost:5000";
 
 // ======= TOAST COMPONENT =======
@@ -23,7 +22,7 @@ const MyRentals = () => {
   const { token } = useAuth();
   const [rentals, setRentals] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const [selectedInvoiceRental, setSelectedInvoiceRental] = useState(null);
   // State cho Modal Ký tên
   const [selectedRental, setSelectedRental] = useState(null);
   const [signModalOpen, setSignModalOpen] = useState(false);
