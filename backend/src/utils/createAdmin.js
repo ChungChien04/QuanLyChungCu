@@ -1,14 +1,18 @@
+// /backend/src/config/createDefaultAdmin.js (ví dụ)
 const User = require("../models/userModel");
 
 const createDefaultAdmin = async () => {
   try {
-    const exists = await User.findOne({ email: "admin@system.com" });
+    const adminEmail = process.env.ADMIN_EMAIL || "admin@system.com";
+    const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
+
+    const exists = await User.findOne({ email: adminEmail });
 
     if (!exists) {
       await User.create({
         name: "Admin",
-        email: "admin@system.com",
-        password: "admin123",  // KHÔNG TỰ HASH
+        email: adminEmail,
+        password: adminPassword, // KHÔNG tự hash, vì userSchema.pre('save') đã hash rồi
         role: "admin",
       });
 

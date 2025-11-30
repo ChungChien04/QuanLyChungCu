@@ -29,7 +29,7 @@ const AdminReviewPage = () => {
       });
 
       setReviews(data || []);
-    } catch  {
+    } catch {
       setError("Không tải được danh sách đánh giá.");
     } finally {
       setLoading(false);
@@ -72,7 +72,8 @@ const AdminReviewPage = () => {
   };
 
   const submitReply = async () => {
-    if (!replyContent.trim()) return alert("Nội dung phản hồi không được để trống.");
+    if (!replyContent.trim())
+      return alert("Nội dung phản hồi không được để trống.");
 
     try {
       await axios.put(
@@ -104,173 +105,266 @@ const AdminReviewPage = () => {
 
   if (!user || user.role !== "admin") {
     return (
-      <p className="text-center mt-10 text-red-600">
-        Bạn không có quyền truy cập trang này.
-      </p>
+      <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-emerald-50 flex items-center justify-center px-4">
+        <p className="text-center text-red-600 bg-white px-6 py-4 rounded-2xl shadow border border-red-100 text-sm md:text-base">
+          Bạn không có quyền truy cập trang này.
+        </p>
+      </div>
     );
   }
 
+  const renderStatusBadge = (status) => {
+    if (status === "pending") {
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-50 text-yellow-700 border border-yellow-200">
+          Chờ duyệt
+        </span>
+      );
+    }
+    if (status === "approved") {
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          Đã duyệt
+        </span>
+      );
+    }
+    return (
+      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-50 text-gray-600 border border-gray-200">
+        Ẩn
+      </span>
+    );
+  };
+
   return (
-    <div className="max-w-7xl mx-auto mt-20 bg-white shadow-xl rounded-3xl p-8 border border-gray-100">
-      
-      <h1 className="text-3xl font-bold mb-6 text-green-700">
-        Quản lý đánh giá
-      </h1>
+    <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-emerald-50">
+      {/* HEADER */}
+      <section className="bg-gradient-to-b from-emerald-50 to-emerald-100/40 border-b border-emerald-50">
+        <div className="max-w-7xl mx-auto px-6 pt-[96px] pb-6">
+          <p className="text-xs uppercase tracking-[0.22em] text-emerald-500 mb-2">
+            Admin panel
+          </p>
+          <h1 className="text-3xl md:text-4xl font-bold text-emerald-700 mb-1">
+            Quản lý đánh giá
+          </h1>
+          <p className="text-sm md:text-base text-emerald-900/80 max-w-xl">
+            Xem, duyệt, ẩn và phản hồi các đánh giá của khách hàng cho từng căn
+            hộ.
+          </p>
+        </div>
+      </section>
 
-      {/* LỌC */}
-      <div className="flex items-center gap-3 mb-6 bg-gray-50 p-4 rounded-2xl border shadow-sm">
-        <span className="font-semibold text-gray-700">Lọc theo trạng thái:</span>
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* LỌC */}
+        <div className="bg-white shadow-md rounded-2xl p-5 border border-gray-200 mb-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="font-semibold text-gray-800 text-sm">
+                Lọc theo trạng thái:
+              </span>
 
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border rounded-xl focus:ring-2 focus:ring-green-300"
-        >
-          <option value="all">Tất cả</option>
-          <option value="pending">Chờ duyệt</option>
-          <option value="approved">Đã duyệt</option>
-          <option value="hidden">Ẩn</option>
-        </select>
-      </div>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none"
+              >
+                <option value="all">Tất cả</option>
+                <option value="pending">Chờ duyệt</option>
+                <option value="approved">Đã duyệt</option>
+                <option value="hidden">Ẩn</option>
+              </select>
+            </div>
 
-      {loading && <p>Đang tải...</p>}
-      {error && <p className="text-red-600 mb-3">{error}</p>}
+            {loading && (
+              <p className="text-xs text-gray-500 italic">
+                Đang tải danh sách đánh giá...
+              </p>
+            )}
+          </div>
 
-      {/* TABLE */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full border text-sm rounded-2xl overflow-hidden shadow-md">
-          
-          <thead className="bg-green-700 text-white text-sm">
-            <tr>
-              <th className="border px-3 py-3">Căn hộ</th>
-              <th className="border px-3 py-3">Người dùng</th>
-              <th className="border px-3 py-3">Điểm</th>
-              <th className="border px-3 py-3">Nội dung</th>
-              <th className="border px-3 py-3">Trạng thái</th>
-              <th className="border px-3 py-3">Ngày</th>
-              <th className="border px-3 py-3">Phản hồi</th>
-              <th className="border px-3 py-3">Hành động</th>
-            </tr>
-          </thead>
+          {error && (
+            <p className="text-red-600 text-sm mt-3 bg-red-50 border border-red-100 px-3 py-2 rounded-xl">
+              {error}
+            </p>
+          )}
+        </div>
 
-          <tbody>
-            {reviews.map((r) => (
-              <tr key={r._id} className="hover:bg-gray-50">
-                
-                <td className="border px-3 py-3">{r.apartment?.title || "—"}</td>
-                <td className="border px-3 py-3">{r.user?.name || r.user?.email}</td>
-                <td className="border px-3 py-3">⭐ {r.rating}</td>
-                <td className="border px-3 py-3 max-w-xs break-words">{r.content}</td>
-
-                <td className="border px-3 py-3">
-                  {r.status === "pending" ? (
-                    <span className="text-yellow-600 font-semibold">Chờ duyệt</span>
-                  ) : r.status === "approved" ? (
-                    <span className="text-green-700 font-semibold">Đã duyệt</span>
-                  ) : (
-                    <span className="text-gray-500">Ẩn</span>
-                  )}
-                </td>
-
-                <td className="border px-3 py-3">
-                  {new Date(r.createdAt).toLocaleString()}
-                </td>
-
-                {/* PHẢN HỒI */}
-                <td className="border px-3 py-3 max-w-xs break-words">
-                  {r.reply?.content ? (
-                    <>
-                      <p className="text-gray-800 text-sm">{r.reply.content}</p>
-                      <small className="text-gray-500 text-xs">
-                        {new Date(r.reply.repliedAt).toLocaleString()}
-                      </small>
-                    </>
-                  ) : (
-                    <span className="text-gray-400">Chưa có phản hồi</span>
-                  )}
-                </td>
-
-                {/* BUTTONS */}
-                <td className="border mx-auto px-3 py-3 space-y-2 min-w-[150px]">
-
-                  {r.status !== "approved" && (
-                    <button
-                      onClick={() => updateStatus(r._id, "approved")}
-                      className=" w-1/2 bg-green-700 text-white px-2 py-1 rounded-xl text-xs hover:bg-green-800"
-                    >
-                      Duyệt
-                    </button>
-                  )}
-
-                  {r.status !== "hidden" && (
-                    <button
-                      onClick={() => updateStatus(r._id, "hidden")}
-                      className="w-1/2  bg-yellow-600 text-white px-2 py-1 rounded-xl text-xs"
-                    >
-                      Ẩn
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => deleteReview(r._id)}
-                    className="w-1/2 bg-red-600 text-white px-2 py-1 rounded-xl text-xs hover:bg-red-700"
-                  >
-                    Xóa
-                  </button>
-
-                  <button
-                    onClick={() => startReply(r)}
-                    className="w-1/2 bg-blue-600 text-white px-2 py-1 rounded-xl text-xs"
-                  >
-                    {r.reply?.content ? "Sửa phản hồi" : "Phản hồi"}
-                  </button>
-
-                  {r.reply?.content && (
-                    <button
-                      onClick={() => deleteReply(r._id)}
-                      className="w-1/2 bg-gray-500 text-white px-2 py-1 rounded-xl text-xs"
-                    >
-                      Xóa phản hồi
-                    </button>
-                  )}
-
-                  {activeReplyId === r._id && (
-                    <div className="mt-2 p-2 border rounded-xl bg-gray-50">
-                      <textarea
-                        rows="3"
-                        className="w-full border p-2 rounded-xl text-sm mb-2"
-                        value={replyContent}
-                        onChange={(e) => setReplyContent(e.target.value)}
-                      />
-
-                      <div className="flex gap-2">
-                        <button
-                          onClick={submitReply}
-                          className="flex-1 bg-green-700 text-white py-1 rounded-xl text-xs"
-                        >
-                          Lưu
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            setActiveReplyId(null);
-                            setReplyContent("");
-                          }}
-                          className="flex-1 bg-gray-300 text-gray-700 py-1 rounded-xl text-xs"
-                        >
-                          Hủy
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                </td>
+        {/* TABLE */}
+        <div className="bg-white shadow-xl rounded-2xl border border-gray-200 overflow-hidden overflow-x-auto">
+          <table className="min-w-[1000px] w-full text-sm">
+            <thead className="bg-emerald-50/80 border-b border-gray-200">
+              <tr className="text-gray-700">
+                <th className="px-3 py-3 text-left font-semibold">Căn hộ</th>
+                <th className="px-3 py-3 text-left font-semibold">Người dùng</th>
+                <th className="px-3 py-3 text-left font-semibold">Điểm</th>
+                <th className="px-3 py-3 text-left font-semibold">Nội dung</th>
+                <th className="px-3 py-3 text-left font-semibold">Trạng thái</th>
+                <th className="px-3 py-3 text-left font-semibold">Ngày</th>
+                <th className="px-3 py-3 text-left font-semibold">Phản hồi</th>
+                <th className="px-3 py-3 text-left font-semibold">Hành động</th>
               </tr>
-            ))}
-          </tbody>
+            </thead>
 
-        </table>
-      </div>
+            <tbody>
+              {reviews.map((r) => (
+                <tr
+                  key={r._id}
+                  className="border-t border-gray-100 hover:bg-emerald-50/40 align-top"
+                >
+                  <td className="px-3 py-3">
+                    <p className="font-medium text-gray-900 line-clamp-2">
+                      {r.apartment?.title || "—"}
+                    </p>
+                  </td>
+
+                  <td className="px-3 py-3">
+                    <p className="text-gray-800">
+                      {r.user?.name || r.user?.email}
+                    </p>
+                  </td>
+
+                  <td className="px-3 py-3">
+                    <span className="inline-flex items-center gap-1 text-amber-600 font-semibold">
+                      ⭐ <span>{r.rating}</span>
+                    </span>
+                  </td>
+
+                  <td className="px-3 py-3 max-w-xs">
+                    <p className="text-gray-800 text-sm break-words whitespace-pre-wrap">
+                      {r.content}
+                    </p>
+                  </td>
+
+                  <td className="px-3 py-3">
+                    {renderStatusBadge(r.status)}
+                  </td>
+
+                  <td className="px-3 py-3">
+                    <p className="text-xs text-gray-600">
+                      {new Date(r.createdAt).toLocaleString("vi-VN")}
+                    </p>
+                  </td>
+
+                  {/* PHẢN HỒI */}
+                  <td className="px-3 py-3 max-w-xs">
+                    {r.reply?.content ? (
+                      <div className="space-y-1">
+                        <p className="text-gray-800 text-sm break-words whitespace-pre-wrap">
+                          {r.reply.content}
+                        </p>
+                        <p className="text-[11px] text-gray-500">
+                          {new Date(r.reply.repliedAt).toLocaleString("vi-VN")}
+                        </p>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400 text-xs">
+                        Chưa có phản hồi
+                      </span>
+                    )}
+                  </td>
+
+                  {/* BUTTONS */}
+                  <td className="px-3 py-3 min-w-[190px]">
+                    <div className="flex flex-col gap-1.5">
+                      {r.status !== "approved" && (
+                        <button
+                          onClick={() => updateStatus(r._id, "approved")}
+                          className="w-full bg-emerald-600 text-white px-2 py-1.5 rounded-xl text-xs font-medium hover:bg-emerald-700 shadow-sm"
+                        >
+                          Duyệt
+                        </button>
+                      )}
+
+                      {r.status !== "hidden" && (
+                        <button
+                          onClick={() => updateStatus(r._id, "hidden")}
+                          className="w-full bg-amber-500 text-white px-2 py-1.5 rounded-xl text-xs font-medium hover:bg-amber-600"
+                        >
+                          Ẩn
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => deleteReview(r._id)}
+                        className="w-full bg-red-500 text-white px-2 py-1.5 rounded-xl text-xs font-medium hover:bg-red-600"
+                      >
+                        Xóa
+                      </button>
+
+                      <button
+                        onClick={() => startReply(r)}
+                        className="w-full bg-blue-600 text-white px-2 py-1.5 rounded-xl text-xs font-medium hover:bg-blue-700"
+                      >
+                        {r.reply?.content ? "Sửa phản hồi" : "Phản hồi"}
+                      </button>
+
+                      {r.reply?.content && (
+                        <button
+                          onClick={() => deleteReply(r._id)}
+                          className="w-full bg-gray-500 text-white px-2 py-1.5 rounded-xl text-xs font-medium hover:bg-gray-600"
+                        >
+                          Xóa phản hồi
+                        </button>
+                      )}
+
+                      {activeReplyId === r._id && (
+                        <div className="mt-2 p-2 border border-gray-200 rounded-xl bg-gray-50">
+                          <textarea
+                            rows={3}
+                            className="w-full border border-gray-200 p-2 rounded-xl text-xs mb-2 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none"
+                            value={replyContent}
+                            onChange={(e) => setReplyContent(e.target.value)}
+                          />
+
+                          <div className="flex gap-2">
+                            <button
+                              onClick={submitReply}
+                              className="flex-1 bg-emerald-600 text-white py-1.5 rounded-xl text-xs font-semibold hover:bg-emerald-700"
+                            >
+                              Lưu
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setActiveReplyId(null);
+                                setReplyContent("");
+                              }}
+                              className="flex-1 bg-gray-200 text-gray-700 py-1.5 rounded-xl text-xs font-semibold hover:bg-gray-300"
+                            >
+                              Hủy
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+
+              {!loading && reviews.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={8}
+                    className="px-4 py-10 text-center text-gray-500 text-sm"
+                  >
+                    Chưa có đánh giá nào.
+                  </td>
+                </tr>
+              )}
+
+              {loading && (
+                <tr>
+                  <td
+                    colSpan={8}
+                    className="px-4 py-8 text-center text-gray-600 text-sm"
+                  >
+                    Đang tải dữ liệu...
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </main>
     </div>
   );
 };

@@ -4,14 +4,18 @@ const Rental = require("../models/rentalModel");
 const Apartment = require("../models/apartmentModel");
 
 // =====================================================
-// SYSTEM PROMPT – NGÔN NGỮ TỰ NHIÊN + HIỆN ĐẠI
+// BASE CONFIG
+// =====================================================
+const FRONTEND_URL = "http://localhost:5173";
+
+// =====================================================
+// SYSTEM PROMPT – RÕ RÀNG, TỰ NHIÊN, ĐÚNG NGỮ CẢNH
 // =====================================================
 const BASE_SYSTEM_PROMPT = `
-Bạn là Trợ lý AI SMARTBUILDING – một trợ lý thân thiện, chuyên nghiệp và hiểu toàn bộ hệ thống căn hộ.
+Bạn là Trợ lý AI SMARTBUILDING – hỗ trợ khách hàng tìm căn hộ, tư vấn hợp đồng, thanh toán, OTP và tin tức.
 
 Giọng văn:
 - Ngắn gọn, tự nhiên, dễ hiểu.
-- Tư vấn như một nhân viên chăm sóc khách hàng.
 - Chủ động gợi ý bước tiếp theo.
 - Chỉ trả lời trong phạm vi: căn hộ, thuê nhà, hợp đồng, thanh toán, tiện ích, OTP, tin tức.
 
@@ -32,7 +36,7 @@ Hủy:
 EMAIL & OTP
 ====================================
 - OTP gửi qua email khi đăng ký / quên mật khẩu.
-- Thanh toán xong → gửi email xác nhận.
+- Thanh toán thành công → gửi email xác nhận.
 - Không nhận email → hướng dẫn kiểm tra spam.
 
 ====================================
@@ -44,21 +48,29 @@ EMAIL & OTP
 Gia đình đông → 3PN+
 
 ====================================
+QUY ĐỊNH BẮT BUỘC VỀ LINK CĂN HỘ
+====================================
+- Khi trả lời về căn hộ → luôn dùng link ĐẦY ĐỦ:
+  ${FRONTEND_URL}/apartments/<ObjectID 24 ký tự>
+- KHÔNG được dùng dạng /apartments/<id>.
+- KHÔNG được tạo mã phòng (A101, B202…).
+- Chỉ sử dụng ID thật từ hệ thống.
+
+====================================
 CÁCH TRẢ LỜI
 ====================================
-- Luôn bám sát dữ liệu thật của user.
-- Gợi ý rõ ràng bước tiếp theo.
-- Khi user hỏi tìm căn hộ → phải đề xuất rõ ràng + kèm link /apartments/:id.
-- Luôn nói tự nhiên, dễ hiểu.
+- Luôn bám sát dữ liệu thật.
+- Gợi ý bước tiếp theo rõ ràng.
+- Khi người dùng hỏi tìm căn hộ → phải trả lại danh sách + link đầy đủ.
 `;
 
 
 // =====================================================
-// BUILD userContext để cá nhân hóa trả lời
+// BUILD USER CONTEXT
 // =====================================================
 function buildUserContext(rentals = []) {
   if (!rentals.length) {
-    return `Người dùng hiện chưa có hợp đồng nào. Có thể đề xuất phòng phù hợp khi họ mô tả nhu cầu.`;
+    return `Người dùng hiện chưa có hợp đồng nào. Có thể đề xuất phòng phù hợp theo nhu cầu.`;
   }
 
   const r = rentals[0];
@@ -66,29 +78,29 @@ function buildUserContext(rentals = []) {
   let nextStep = "";
   if (r.status === "pending") nextStep = "Đơn đang chờ admin duyệt.";
   if (r.status === "approved" && !r.contractSigned)
-    nextStep = "Admin đã duyệt. Bạn cần vào mục 'Hợp đồng của tôi' để ký.";
+    nextStep = "Admin đã duyệt, bạn cần vào mục 'Hợp đồng của tôi' để ký.";
   if (r.contractSigned && !r.paymentDone)
-    nextStep = "Bạn đã ký hợp đồng. Bây giờ bạn có thể thanh toán VNPAY.";
+    nextStep = "Bạn đã ký hợp đồng, tiếp theo bạn có thể thanh toán qua VNPAY.";
   if (r.paymentDone)
-    nextStep = "Bạn đã thanh toán thành công. Email xác nhận đã được gửi.";
+    nextStep = "Bạn đã thanh toán thành công, email xác nhận đã được gửi.";
   if (r.status === "cancelling")
-    nextStep = "Yêu cầu hủy của bạn đang chờ admin xác nhận.";
+    nextStep = "Yêu cầu hủy đang chờ admin xác nhận.";
   if (r.status === "cancelled")
-    nextStep = "Hợp đồng đã hủy. Bạn có thể tìm căn hộ khác nếu muốn.";
+    nextStep = "Hợp đồng đã hủy, bạn có thể tìm căn hộ khác.";
 
   return `
 THÔNG TIN NGƯỜI DÙNG:
-- Căn hộ: ${r.apartment?.title || "Không rõ"}
-- Trạng thái: ${r.status}
-- Đã ký hợp đồng: ${r.contractSigned}
+- Căn đang thuê: ${r.apartment?.title || "Không rõ"}
+- Trạng thái hợp đồng: ${r.status}
+- Đã ký: ${r.contractSigned}
 - Đã thanh toán: ${r.paymentDone}
-- Gợi ý tiếp theo: ${nextStep}
+- Bước tiếp theo: ${nextStep}
   `;
 }
 
 
 // =====================================================
-// Lọc căn hộ theo số người
+// FILTER CĂN HỘ THEO SỐ NGƯỜI
 // =====================================================
 function filterApartmentsByPeople(apartments, num) {
   if (num <= 1) return apartments.filter(a => a.bedrooms <= 1);
@@ -99,7 +111,7 @@ function filterApartmentsByPeople(apartments, num) {
 
 
 // =====================================================
-// MAIN: CHATBOT
+// MAIN CHATBOT
 // =====================================================
 exports.askChatbot = async (req, res) => {
   const { prompt } = req.body;
@@ -108,9 +120,7 @@ exports.askChatbot = async (req, res) => {
   const apiKey = process.env.GEMINI_API_KEY;
 
   try {
-    // ------------------------------------------------------
-    // LOAD Lịch sử + Hợp đồng + Căn hộ
-    // ------------------------------------------------------
+    // LOAD data
     let history = [];
     let rentals = [];
     let apartments = [];
@@ -130,9 +140,9 @@ exports.askChatbot = async (req, res) => {
     const userContext = req.user?._id ? buildUserContext(rentals) : "";
 
 
-    // ------------------------------------------------------
-    // Tự động nhận dạng nhu cầu tìm phòng theo số người
-    // ------------------------------------------------------
+    // =====================================================
+    // NHẬN DẠNG SỐ NGƯỜI TÌM PHÒNG (TỰ ĐỘNG)
+    // =====================================================
     let numPeople = null;
 
     if (/1 người|một mình/i.test(prompt)) numPeople = 1;
@@ -141,7 +151,7 @@ exports.askChatbot = async (req, res) => {
     if (/4 người|bốn người/i.test(prompt)) numPeople = 4;
     if (/5|6|7|gia đình/i.test(prompt)) numPeople = 5;
 
-    // Nếu người dùng hỏi tìm phòng → trả ngay kết quả kèm link
+    // Nếu user hỏi tìm phòng → trả kết quả ngay
     if (numPeople && apartments.length > 0) {
       const filtered = filterApartmentsByPeople(apartments, numPeople).slice(0, 6);
 
@@ -156,18 +166,18 @@ exports.askChatbot = async (req, res) => {
 • Giá: ${a.price.toLocaleString()} đ/tháng  
 • Diện tích: ${a.area} m²  
 • Phòng ngủ: ${a.bedrooms}  
-➡ Link: http://localhost:5173/apartments/${a._id}\n`
+➡ Link: ${FRONTEND_URL}/apartments/${a._id}\n`
               )
               .join("\n") +
-            `\nBạn muốn xem căn nào trước?`
+            `Bạn muốn xem căn nào trước?`
         });
       }
     }
 
 
-    // ------------------------------------------------------
-    // Tạo MULTITURN chat
-    // ------------------------------------------------------
+    // =====================================================
+    // MULTITURN HISTORY
+    // =====================================================
     const contents = [];
 
     history.forEach((m) =>
@@ -180,9 +190,26 @@ exports.askChatbot = async (req, res) => {
     contents.push({ role: "user", parts: [{ text: prompt }] });
 
 
-    // ------------------------------------------------------
-    // GỌI GEMINI
-    // ------------------------------------------------------
+    // =====================================================
+    // SYSTEM INSTRUCTION + FULL LINK LIST
+    // =====================================================
+    const systemText =
+      BASE_SYSTEM_PROMPT +
+      "\n\n" +
+      userContext +
+      "\n\nDANH SÁCH CĂN HỘ AVAILABLE (LUÔN TRẢ LINK ĐẦY ĐỦ):\n" +
+      apartments
+        .map(
+          (a) =>
+            `• ${a.title} – ${a.bedrooms}PN – ${a.area}m² – ${a.price.toLocaleString()}đ/tháng
+➡ Link: ${FRONTEND_URL}/apartments/${a._id}`
+        )
+        .join("\n");
+
+
+    // =====================================================
+    // GỌI GEMINI API
+    // =====================================================
     const apiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
       {
@@ -190,23 +217,7 @@ exports.askChatbot = async (req, res) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents,
-          systemInstruction: {
-            parts: [
-              {
-                text:
-                  BASE_SYSTEM_PROMPT +
-                  "\n\n" +
-                  userContext +
-                  "\n\nDANH SÁCH CĂN HỘ AVAILABLE:\n" +
-                  apartments
-                    .map(
-                      (a) =>
-                        `• ${a.title} – ${a.bedrooms}PN – ${a.area}m² – ${a.price.toLocaleString()}đ – /apartments/${a._id}`
-                    )
-                    .join("\n")
-              },
-            ],
-          },
+          systemInstruction: { parts: [{ text: systemText }] },
         }),
       }
     );
@@ -217,9 +228,7 @@ exports.askChatbot = async (req, res) => {
       "Mình chưa hiểu ý bạn lắm, bạn mô tả rõ hơn được không ạ?";
 
 
-    // ------------------------------------------------------
-    // Lưu lịch sử hội thoại
-    // ------------------------------------------------------
+    // LƯU HISTORY
     if (req.user?._id) {
       await ChatMessage.create({
         user: req.user._id,
@@ -245,7 +254,7 @@ exports.askChatbot = async (req, res) => {
 
 
 // =====================================================
-// API: Lấy lịch sử chat của tôi
+// API: LẤY LỊCH SỬ CHAT
 // =====================================================
 exports.getMyChatHistory = async (req, res) => {
   try {

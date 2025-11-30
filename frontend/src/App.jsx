@@ -20,10 +20,10 @@ import AdminReviewPage from "./pages/admin/AdminReviewPage";
 import AdminApartmentPage from "./pages/admin/AdminApartmentPage";
 import AdminRentalsPage from "./pages/AdminRentalManagement";
 import AdminNewsPage from "./pages/admin/AdminNewsPage";
-// 👇 Import trang quản lý hóa đơn (Nhớ tạo file này trước)
 import AdminInvoiceManagement from "./pages/admin/AdminInvoiceManagement";
-import MyInvoicesPage from "./pages/MyInvoicesPage";
+
 // Client Pages
+import MyInvoicesPage from "./pages/MyInvoicesPage";
 import MyRentals from "./pages/MyRentals";
 import NewsListPage from "./pages/NewsListPage";
 
@@ -33,12 +33,12 @@ import AdminRoute from "./AdminRoute";
 
 function App() {
   return (
-    <>
+    <div className="min-h-screen flex flex-col bg-white">
       {/* NAVBAR */}
       <Navbar />
 
-      {/* Avoid navbar overlap */}
-      <div style={{ paddingTop: "80px" }}>
+      {/* MAIN CONTENT (được đẩy xuống dưới navbar 80px) */}
+      <main className="flex-1 pt-[80px]">
         <Routes>
           {/* HOME */}
           <Route path="/" element={<HomePage />} />
@@ -51,16 +51,17 @@ function App() {
           <Route path="/verify-otp" element={<VerifyOTPPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          {/* LIST OF APARTMENTS (ĐẶT TRƯỚC) */}
+          {/* LIST OF APARTMENTS */}
           <Route path="/apartments" element={<ApartmentListPage />} />
 
-          {/* DETAIL ROUTE CHUẨN (CHATBOT & HỆ THỐNG MỚI DÙNG) */}
+          {/* DETAIL ROUTE CHÍNH */}
           <Route path="/apartments/:id" element={<ApartmentDetailPage />} />
-
-          {/* DETAIL ROUTE CŨ - để tránh lỗi backward compatibility */}
+          {/* DETAIL ROUTE CŨ - backward compatibility */}
           <Route path="/apartment/:id" element={<ApartmentDetailPage />} />
 
           <Route path="/google/callback" element={<GoogleCallback />} />
+
+          {/* CLIENT - INVOICES */}
           <Route
             path="/my-invoices"
             element={
@@ -69,6 +70,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           {/* CLIENT - NEWS */}
           <Route
             path="/news"
@@ -80,8 +82,6 @@ function App() {
           />
 
           {/* ================= ADMIN ROUTES ================= */}
-
-          {/* ADMIN - NEWS */}
           <Route
             path="/admin/news"
             element={
@@ -91,10 +91,8 @@ function App() {
             }
           />
 
-          {/* ADMIN - REVIEWS (Public or Protected tùy bạn) */}
           <Route path="/admin/reviews" element={<AdminReviewPage />} />
 
-          {/* ADMIN - APARTMENTS */}
           <Route
             path="/admin/apartments"
             element={
@@ -104,7 +102,6 @@ function App() {
             }
           />
 
-          {/* ADMIN - RENTALS */}
           <Route
             path="/admin/rentals"
             element={
@@ -114,7 +111,6 @@ function App() {
             }
           />
 
-          {/* 🆕 ADMIN - INVOICES (QUẢN LÝ HÓA ĐƠN) */}
           <Route
             path="/admin/invoices"
             element={
@@ -125,7 +121,6 @@ function App() {
           />
 
           {/* ================= CLIENT ROUTES ================= */}
-
           <Route
             path="/profile"
             element={
@@ -134,6 +129,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/my-rentals"
             element={
@@ -143,11 +139,11 @@ function App() {
             }
           />
         </Routes>
-      </div>
+      </main>
 
-      {/* FOOTER */}
+      {/* FOOTER (luôn ở dưới) */}
       <Footer />
-    </>
+    </div>
   );
 }
 

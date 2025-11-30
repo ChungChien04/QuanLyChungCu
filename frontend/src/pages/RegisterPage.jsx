@@ -17,11 +17,11 @@ const RegisterPage = () => {
   const [loading, setLoading] = useState(false);
   const [passwordError, setPasswordError] = useState("");
 
-  // ⭐ Hiện/ẩn mật khẩu
+  // Hiện/ẩn mật khẩu
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // ⭐ Regex mật khẩu mạnh: ≥6, có chữ, có số, có IN HOA, có ký tự đặc biệt
+  // Regex mật khẩu mạnh
   const strongPassword =
     /^(?=.*[A-Za-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-={}[\]|:;"'<>,.?/]).{6,}$/;
 
@@ -52,7 +52,7 @@ const RegisterPage = () => {
     setMessage("");
     setLoading(true);
 
-    // ⭐ Check final
+    // Check final
     if (!strongPassword.test(form.password)) {
       setPasswordError(
         "Mật khẩu phải ≥6 ký tự, có chữ cái, chữ IN HOA, số và ký tự đặc biệt"
@@ -92,11 +92,10 @@ const RegisterPage = () => {
 
   return (
     <div className="fixed inset-0 bg-black/40 flex justify-center items-center px-4 z-50">
-
       <div className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-2 relative">
-
+        {/* Nút đóng */}
         <button
-          className="absolute right-5 top-5 text-gray-400 hover:text-black text-2xl"
+          className="absolute right-5 top-5 text-gray-400 hover:text-gray-700 text-2xl"
           onClick={() => navigate("/")}
         >
           ×
@@ -104,18 +103,23 @@ const RegisterPage = () => {
 
         {/* LEFT FORM */}
         <div className="p-10 flex flex-col justify-center">
+          <h2 className="text-3xl font-bold text-gray-900">
+            Chào mừng bạn đến với
+          </h2>
+          <h2 className="text-3xl font-extrabold text-emerald-700 mb-8 tracking-tight">
+            SMARTBUILDING
+          </h2>
 
-          <h2 className="text-3xl font-bold text-gray-900">Chào mừng bạn đến với</h2>
-          <h2 className="text-3xl font-bold text-green-700 mb-8">SMARTBUILDING</h2>
-
-          <h3 className="text-lg font-semibold mb-4">Đăng ký tài khoản</h3>
+          <h3 className="text-lg font-semibold mb-4 text-gray-800">
+            Đăng ký tài khoản
+          </h3>
 
           {message && (
             <div
-              className={`p-3 rounded-lg mb-4 text-sm text-center ${
+              className={`p-3 rounded-xl mb-4 text-sm text-center border ${
                 message.includes("OTP")
-                  ? "bg-green-50 text-green-700 border border-green-200"
-                  : "bg-red-50 text-red-700 border border-red-200"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : "bg-red-50 text-red-700 border-red-200"
               }`}
             >
               {message}
@@ -123,22 +127,25 @@ const RegisterPage = () => {
           )}
 
           <form onSubmit={handleRegister} className="space-y-4">
-
+            {/* Họ tên */}
             <input
               type="text"
               name="name"
               placeholder="Họ và tên"
               required
-              className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-300"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50
+                focus:ring-2 focus:ring-emerald-400/60 focus:border-emerald-500 outline-none transition"
               onChange={onChange}
             />
 
+            {/* Email */}
             <input
               type="email"
               name="email"
               placeholder="Email"
               required
-              className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-300"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50
+                focus:ring-2 focus:ring-emerald-400/60 focus:border-emerald-500 outline-none transition"
               onChange={onChange}
             />
 
@@ -149,24 +156,25 @@ const RegisterPage = () => {
                 name="password"
                 placeholder="Mật khẩu"
                 required
-                className={`w-full px-4 py-3 pr-12 border rounded-xl focus:ring-2 focus:ring-green-300 ${
-                  passwordError ? "border-red-500" : ""
-                }`}
+                className={`w-full px-4 py-3 pr-12 border rounded-xl bg-gray-50
+                  focus:ring-2 focus:ring-emerald-400/60 focus:border-emerald-500 outline-none transition ${
+                    passwordError ? "border-red-500" : "border-gray-300"
+                  }`}
                 onChange={onChange}
               />
 
-             <button
-  type="button"
-  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-  onClick={() => setShowPassword(!showPassword)}
-  aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
->
-  {showPassword ? (
-    <EyeIcon className="w-5 h-5" />
-  ) : (
-    <EyeSlashIcon className="w-5 h-5" />
-  )}
-</button>
+              <button
+                type="button"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              >
+                {showPassword ? (
+                  <EyeIcon className="w-5 h-5" />
+                ) : (
+                  <EyeSlashIcon className="w-5 h-5" />
+                )}
+              </button>
 
               {passwordError && (
                 <p className="text-red-500 text-sm mt-1">{passwordError}</p>
@@ -180,28 +188,32 @@ const RegisterPage = () => {
                 name="confirmPassword"
                 placeholder="Xác nhận mật khẩu"
                 required
-                className="w-full px-4 py-3 pr-12 border rounded-xl focus:ring-2 focus:ring-green-300"
+                className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl bg-gray-50
+                  focus:ring-2 focus:ring-emerald-400/60 focus:border-emerald-500 outline-none transition"
                 onChange={onChange}
               />
 
               <button
-  type="button"
-  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-  aria-label={showConfirmPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
->
-  {showConfirmPassword ? (
-    <EyeIcon className="w-5 h-5" />
-  ) : (
-    <EyeSlashIcon className="w-5 h-5" />
-  )}
-</button>
-
+                type="button"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                aria-label={
+                  showConfirmPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"
+                }
+              >
+                {showConfirmPassword ? (
+                  <EyeIcon className="w-5 h-5" />
+                ) : (
+                  <EyeSlashIcon className="w-5 h-5" />
+                )}
+              </button>
             </div>
 
+            {/* Nút gửi OTP */}
             <button
               disabled={loading}
-              className="w-full py-3 bg-green-700 text-white rounded-full font-semibold hover:bg-green-800 transition disabled:bg-green-300"
+              className="w-full py-3 rounded-full text-white font-semibold shadow-md transition
+                bg-gradient-to-r from-emerald-600 to-emerald-700 hover:brightness-110 disabled:opacity-50"
             >
               {loading ? "Đang gửi OTP..." : "Gửi mã OTP"}
             </button>
@@ -209,12 +221,16 @@ const RegisterPage = () => {
 
           <p className="text-center mt-6 text-sm text-gray-600">
             Bạn đã có tài khoản?{" "}
-            <Link className="text-green-700 font-bold hover:underline" to="/login">
+            <Link
+              className="text-emerald-700 font-semibold hover:underline"
+              to="/login"
+            >
               Đăng nhập ngay
             </Link>
           </p>
         </div>
 
+        {/* Ảnh bên phải */}
         <div className="hidden lg:block bg-gray-100">
           <img
             src="https://images.unsplash.com/photo-1501183638710-841dd1904471?auto=format&fit=crop&w=1200&q=60"
@@ -222,7 +238,6 @@ const RegisterPage = () => {
             className="w-full h-full object-cover rounded-r-3xl"
           />
         </div>
-
       </div>
     </div>
   );

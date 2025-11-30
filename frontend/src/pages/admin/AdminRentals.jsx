@@ -10,7 +10,7 @@ const AdminRentals = () => {
   const [loading, setLoading] = useState(true);
 
   // ============================
-  // FETCH TẤT CẢ ĐƠN THUÊ (ADMIN)
+  // FETCH ALL RENTALS
   // ============================
   const fetchRentals = async () => {
     setLoading(true);
@@ -31,8 +31,6 @@ const AdminRentals = () => {
   }, []);
 
   // ============================
-  // ADMIN DUYỆT
-  // ============================
   const handleApprove = async (id) => {
     try {
       await axios.put(
@@ -47,9 +45,6 @@ const AdminRentals = () => {
     }
   };
 
-  // ============================
-  // ADMIN HỦY ĐƠN
-  // ============================
   const handleCancel = async (id) => {
     try {
       await axios.put(
@@ -76,122 +71,147 @@ const AdminRentals = () => {
     );
 
   return (
-    <div className="max-w-6xl mx-auto mt-10 p-4">
-      <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
-        Quản lý đơn thuê
-      </h2>
+    <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-emerald-50">
 
-      <div className="space-y-4">
-        {rentals.map((r) => (
-          <div
-            key={r._id}
-            className="border rounded-lg shadow p-4 flex flex-col md:flex-row md:justify-between md:items-center gap-3 hover:shadow-lg transition"
-          >
-            <div className="flex-1 space-y-1">
-              <p>
-                <span className="font-semibold">Người thuê:</span>{" "}
-                {r.user?.name} ({r.user?.email})
-              </p>
+      {/* HEADER */}
+      <section className="bg-gradient-to-b from-emerald-50 to-emerald-100/40 border-b border-emerald-50">
+        <div className="max-w-7xl mx-auto px-6 pt-[96px] pb-6">
+          <p className="text-xs uppercase tracking-[0.22em] text-emerald-500 mb-2">
+            Admin panel
+          </p>
+          <h1 className="text-3xl md:text-4xl font-bold text-emerald-700 mb-1">
+            Quản lý đơn thuê
+          </h1>
+          <p className="text-sm md:text-base text-emerald-900/80 max-w-xl">
+            Kiểm tra, duyệt yêu cầu thuê, xử lý hủy đơn của người dùng.
+          </p>
+        </div>
+      </section>
 
-              <p>
-                <span className="font-semibold">Căn hộ:</span>{" "}
-                {r.apartment?.title}
-              </p>
+      <main className="max-w-7xl mx-auto px-6 py-10">
+        <div className="space-y-4">
+          {rentals.map((r) => (
+            <div
+              key={r._id}
+              className="bg-white border border-gray-200 rounded-2xl shadow-md hover:shadow-xl transition-all p-5 flex flex-col md:flex-row md:justify-between md:items-center gap-4"
+            >
+              {/* INFO */}
+              <div className="flex-1 text-sm space-y-1.5">
+                <p>
+                  <span className="font-semibold text-gray-800">Người thuê:</span>{" "}
+                  {r.user?.name} ({r.user?.email})
+                </p>
 
-              <p>
-                <span className="font-semibold">Ngày thuê:</span>{" "}
-                {new Date(r.startDate).toLocaleDateString()} –{" "}
-                {new Date(r.endDate).toLocaleDateString()}
-              </p>
+                <p>
+                  <span className="font-semibold text-gray-800">Căn hộ:</span>{" "}
+                  {r.apartment?.title}
+                </p>
 
-              <p>
-                <span className="font-semibold">Tổng tiền:</span>{" "}
-                {r.totalPrice?.toLocaleString()} đ
-              </p>
+                <p>
+                  <span className="font-semibold text-gray-800">Ngày thuê:</span>{" "}
+                  {new Date(r.startDate).toLocaleDateString()} –{" "}
+                  {new Date(r.endDate).toLocaleDateString()}
+                </p>
 
-              {/* STATUS LABEL */}
-              <p>
-                <span className="font-semibold">Trạng thái:</span>{" "}
-                <span
-                  className={`px-2 py-1 rounded-full text-sm font-semibold ${
-                    r.status === "pending"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : r.status === "approved"
-                      ? "bg-blue-100 text-blue-800"
-                      : r.status === "rented"
-                      ? "bg-green-100 text-green-800"
-                      : r.status === "cancelling"
-                      ? "bg-orange-100 text-orange-800"
-                      : r.status === "cancelled"
-                      ? "bg-red-100 text-red-800"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  {{
-                    pending: "Đang chờ",
-                    approved: "Đã duyệt",
-                    rented: "Đang thuê",
-                    cancelling: "Đang chờ hủy",
-                    cancelled: "Đã hủy",
-                  }[r.status] || r.status}
-                </span>
-              </p>
-            </div>
+                <p>
+                  <span className="font-semibold text-gray-800">Tổng tiền:</span>{" "}
+                  <span className="text-emerald-700 font-semibold">
+                    {r.totalPrice?.toLocaleString()} đ
+                  </span>
+                </p>
 
-            {/* ACTION BUTTONS */}
-            <div className="flex flex-col md:flex-row gap-2 mt-2 md:mt-0">
-              {r.status === "pending" && (
-                <>
-                  <button
-                    onClick={() => handleApprove(r._id)}
-                    className="px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                {/* STATUS */}
+                <p className="mt-2">
+                  <span className="font-semibold text-gray-800">Trạng thái:</span>{" "}
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-semibold border 
+                      ${
+                        r.status === "pending"
+                          ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                          : r.status === "approved"
+                          ? "bg-blue-50 text-blue-700 border-blue-200"
+                          : r.status === "rented"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : r.status === "cancelling"
+                          ? "bg-orange-50 text-orange-700 border-orange-200"
+                          : r.status === "cancelled"
+                          ? "bg-red-50 text-red-700 border-red-200"
+                          : "bg-gray-50 text-gray-700 border-gray-200"
+                      }
+                    `}
                   >
-                    Duyệt
-                  </button>
+                    {(
+                      {
+                        pending: "Đang chờ",
+                        approved: "Đã duyệt",
+                        rented: "Đang thuê",
+                        cancelling: "Đang chờ hủy",
+                        cancelled: "Đã hủy",
+                      }[r.status] || r.status
+                    )}
+                  </span>
+                </p>
+              </div>
 
+              {/* ACTION BUTTONS */}
+              <div className="flex flex-col md:flex-row gap-2 mt-2 md:mt-0">
+                {r.status === "pending" && (
+                  <>
+                    <button
+                      onClick={() => handleApprove(r._id)}
+                      className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-xl shadow-sm hover:bg-emerald-700"
+                    >
+                      Duyệt
+                    </button>
+
+                    <button
+                      onClick={() => handleCancel(r._id)}
+                      className="px-4 py-2 text-sm bg-red-500 text-white rounded-xl shadow-sm hover:bg-red-600"
+                    >
+                      Hủy
+                    </button>
+                  </>
+                )}
+
+                {r.status === "approved" && (
+                  <>
+                    <span className="text-gray-600 text-sm md:mr-2">
+                      Chờ khách ký
+                    </span>
+                    <button
+                      onClick={() => handleCancel(r._id)}
+                      className="px-4 py-2 text-sm bg-red-500 text-white rounded-xl shadow-sm hover:bg-red-600"
+                    >
+                      Hủy
+                    </button>
+                  </>
+                )}
+
+                {r.status === "rented" && (
                   <button
                     onClick={() => handleCancel(r._id)}
-                    className="px-4 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition"
+                    className="px-4 py-2 text-sm bg-red-500 text-white rounded-xl shadow-sm hover:bg-red-600"
                   >
-                    Hủy
+                    Yêu cầu hủy
                   </button>
-                </>
-              )}
+                )}
 
-              {r.status === "approved" && (
-                <>
-                  <span className="text-gray-600">Chờ khách ký</span>
-                  <button
-                    onClick={() => handleCancel(r._id)}
-                    className="px-4 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition"
-                  >
-                    Hủy
-                  </button>
-                </>
-              )}
+                {r.status === "cancelling" && (
+                  <span className="text-orange-600 font-semibold text-sm">
+                    Đang xử lý hủy...
+                  </span>
+                )}
 
-              {r.status === "rented" && (
-                <button
-                  onClick={() => handleCancel(r._id)}
-                  className="px-4 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition"
-                >
-                  Yêu cầu hủy
-                </button>
-              )}
-
-              {r.status === "cancelling" && (
-                <span className="text-orange-600 font-semibold">
-                  Đang xử lý hủy...
-                </span>
-              )}
-
-              {r.status === "cancelled" && (
-                <span className="text-red-600 font-semibold">Đã hủy</span>
-              )}
+                {r.status === "cancelled" && (
+                  <span className="text-red-600 font-semibold text-sm">
+                    Đã hủy
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </main>
     </div>
   );
 };

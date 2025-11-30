@@ -79,7 +79,7 @@ const apartmentsData = [
 const usersData = [
   {
     name: "Admin",
-    email: "admin@example.com",
+    email: "ADMIN_EMAIL_THUC_CUA_BAN@gmail.com",
     password: "admin123",
     role: "admin",
     phone: "0909000001",
@@ -105,7 +105,11 @@ const importData = async () => {
     await User.deleteMany();
 
     await Apartment.insertMany(apartmentsData);
-    await User.insertMany(usersData);
+
+    // ❗ ĐOẠN NÀY ĐỔI insertMany -> create từng user
+    for (const user of usersData) {
+      await User.create(user);   // chạy pre('save') => hash password
+    }
 
     console.log("🌱 Dữ liệu mẫu đã được thêm thành công!");
     process.exit();
