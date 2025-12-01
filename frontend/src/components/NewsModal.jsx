@@ -1,22 +1,25 @@
 import React from "react";
 const API_URL = "http://localhost:5000";
 
+const fixPath = (url) => {
+  if (!url) return "";
+  if (url.startsWith("http")) return url;
+  return `${API_URL}/${url.replace(/^\//, "")}`;
+};
+
 const NewsModal = ({ show, onClose, news }) => {
   if (!show || !news) return null;
 
-  // === FIX THUMBNAIL ===
-  const fixedThumbnail = news.thumbnail?.startsWith("/uploads")
-    ? `${API_URL}${news.thumbnail}`
-    : news.thumbnail;
+  const mainImage = news.thumbnail || news.images?.[0] || "";
+  const fixedThumbnail = fixPath(mainImage);
 
-  // === FIX IMAGE TRONG CONTENT ===
   const fixedContent = news.content
-    ? news.content.replace(/src="\/uploads/gi, `src="${API_URL}/uploads`)
+    ? news.content.replace(/src="\/?uploads/gi, `src="${API_URL}/uploads`)
     : "";
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-      <div className="bg-white max-w-4xl w-full rounded-2xl shadow-2xl overflow-hidden animate-fadeIn border border-emerald-50">
+      <div className="bg-white max-w-4xl w-full rounded-2xl shadow-2xl overflow-hidden border border-emerald-50">
         {/* HEADER */}
         <div className="flex justify-between items-center px-5 py-4 border-b bg-emerald-700 text-white">
           <div>
@@ -56,15 +59,19 @@ const NewsModal = ({ show, onClose, news }) => {
                        prose-img:rounded-xl prose-img:shadow 
                        prose-p:text-gray-700 prose-headings:text-gray-800"
           >
+            {news.description && (
+              <p className="text-sm text-gray-700 leading-relaxed mb-3">
+                {news.description}
+              </p>
+            )}
+
             <div dangerouslySetInnerHTML={{ __html: fixedContent }} />
           </div>
         </div>
 
-        {/* FOOTER / META */}
+        {/* FOOTER */}
         <div className="px-6 py-3 text-xs md:text-sm text-gray-500 flex flex-col md:flex-row md:items-center justify-between gap-2 border-t bg-white">
-          <span>
-            {new Date(news.createdAt).toLocaleString("vi-VN")}
-          </span>
+          <span>{new Date(news.createdAt).toLocaleString("vi-VN")}</span>
           <span className="font-medium text-gray-700">
             {news.createdBy?.name || "Ban quản lý"}
           </span>

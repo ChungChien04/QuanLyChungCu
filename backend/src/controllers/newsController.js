@@ -1,112 +1,125 @@
+// backend/src/controllers/newsController.js
 const News = require("../models/newsModel");
 
+// GET: user thường → chỉ status true; admin → tất cả
 exports.getAllNews = async (req, res) => {
   try {
-    const items = await News.find({ status: true })
+    const isAdmin = req.user?.isAdmin || req.user?.role === "admin";
+
+    const filter = {};
+    if (!isAdmin) filter.status = true;
+
+    const items = await News.find(filter)
       .sort({ createdAt: -1 })
       .populate("createdBy", "name email");
 
-    const fixed = items.map((n) => ({
-      ...n._doc,
-      thumbnail: n.thumbnail 
-        ? `http://localhost:5000${n.thumbnail.toLowerCase()}`
-        : "",
-      images: n.images?.map((i) =>
-        `http://localhost:5000${i.toLowerCase()}`
-      ) || []
-    }));
-
-    res.json(fixed);
+    res.json(items);
   } catch (err) {
+    console.error("getAllNews error:", err);
     res.status(500).json({ message: "Lỗi server khi lấy tin tức." });
   }
 };
 
-
-
-
+// GET 1 tin
 exports.getNewsById = async (req, res) => {
   try {
-    const item = await News.findOne({
-      _id: req.params.id,
-      status: true
-    }).populate("createdBy", "name email");
+    const item = await News.findById(req.params.id).populate(
+      "createdBy",
+      "name email"
+    );
 
-    if (!item)
-      return res.status(404).json({ message: "Tin không tồn tại hoặc đã bị tắt." });
+    if (!item) {
+      return res
+        .status(404)
+        .json({ message: "Tin không tồn tại hoặc đã bị xoá." });
+    }
 
-    const normalize = (p) => {
-      if (!p) return "";
-      return p.trim().toLowerCase();
-    };
+    const isAdmin = req.user?.isAdmin || req.user?.role === "admin";
 
-    const fixedItem = {
-      ...item._doc,
-      thumbnail: normalize(item.thumbnail),
-      images: item.images?.map((i) => normalize(i)) || []
-    };
+    if (!isAdmin && item.status === false) {
+      return res
+        .status(403)
+        .json({ message: "Tin tức này đã bị ẩn khỏi hệ thống." });
+    }
 
-    res.json(fixedItem);
-  } catch {
+    res.json(item);
+  } catch (err) {
+    console.error("getNewsById error:", err);
     res.status(500).json({ message: "Lỗi server khi lấy tin." });
   }
 };
 
+// CREATE tin tức
 exports.createNews = async (req, res) => {
   try {
     const { title, content, description, status, images = [] } = req.body;
 
-    if (!title || !content)
-      return res.status(400).json({ message: "Thiếu tiêu đề hoặc nội dung" });
+    if (!title || !content) {
+      return res
+        .status(400)
+        .json({ message: "Thiếu tiêu đề hoặc nội dung." });
+    }
 
     const news = await News.create({
       title,
       content,
       description,
-      images,                         // ✅ lưu mảng ảnh
-      thumbnail: images?.[0] || "",   // ✅ đồng bộ thumbnail từ ảnh đầu
+      images,
+      thumbnail: images?.[0] || "",
       status: status ?? true,
       createdBy: req.user._id,
     });
 
-    res.status(201).json(news);
+    const populated = await news.populate("createdBy", "name email");
+    res.status(201).json(populated);
   } catch (err) {
-    console.error(err);
+    console.error("createNews error:", err);
     res.status(500).json({ message: "Lỗi tạo tin tức." });
   }
 };
 
-
+// UPDATE tin tức
 exports.updateNews = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, content, images = [], status } = req.body;
+    const { title, description, content, images, status } = req.body;
 
     const news = await News.findById(id);
-    if (!news) return res.status(404).json({ message: "Không tìm thấy tin" });
+    if (!news) {
+      return res.status(404).json({ message: "Không tìm thấy tin." });
+    }
 
-    news.title = title ?? news.title;
-    news.description = description ?? news.description;
-    news.content = content ?? news.content;
-    news.images = images;
-    news.thumbnail = images?.[0] || "";  // đồng bộ thumbnail
-    news.status = status ?? news.status;
+    if (title !== undefined) news.title = title;
+    if (description !== undefined) news.description = description;
+    if (content !== undefined) news.content = content;
+
+    if (Array.isArray(images)) {
+      news.images = images;
+      news.thumbnail = images[0] || news.thumbnail || "";
+    }
+
+    if (status !== undefined) news.status = status;
 
     await news.save();
-    res.json(news);
+    const populated = await news.populate("createdBy", "name email");
+
+    res.json(populated);
   } catch (err) {
-    res.status(500).json({ message: "Cập nhật thất bại" });
+    console.error("updateNews error:", err);
+    res.status(500).json({ message: "Cập nhật thất bại." });
   }
 };
 
-
+// DELETE
 exports.deleteNews = async (req, res) => {
   try {
     const deleted = await News.findByIdAndDelete(req.params.id);
-    if (!deleted)
+    if (!deleted) {
       return res.status(404).json({ message: "Không tìm thấy tin tức." });
-    res.json({ message: "Đã xoá" });
-  } catch {
+    }
+    res.json({ message: "Đã xoá." });
+  } catch (err) {
+    console.error("deleteNews error:", err);
     res.status(500).json({ message: "Lỗi xoá tin tức." });
   }
 };

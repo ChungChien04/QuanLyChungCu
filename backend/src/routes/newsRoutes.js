@@ -1,3 +1,4 @@
+// backend/src/routes/newsRoutes.js
 const express = require("express");
 const router = express.Router();
 
@@ -12,29 +13,16 @@ const {
 const uploadNewsImage = require("../middleware/uploadNewsImage");
 const { protect, admin } = require("../middleware/authMiddleware");
 
-/* ============================
-   USER – Xem tin tức
-=============================== */
+// USER xem tin tức
 router.get("/", protect, getAllNews);
 router.get("/:id", protect, getNewsById);
 
-/* ============================
-   ADMIN – CRUD tin tức
-=============================== */
-
-// ➕ Tạo tin mới
+// ADMIN CRUD
 router.post("/", protect, admin, createNews);
-
-// ✏️ Sửa tin
 router.put("/:id", protect, admin, updateNews);
-
-// 🗑 Xoá tin
 router.delete("/:id", protect, admin, deleteNews);
 
-/* ============================
-   ADMIN – Upload ảnh tin tức
-=============================== */
-
+// ADMIN upload hình
 router.post(
   "/upload",
   protect,

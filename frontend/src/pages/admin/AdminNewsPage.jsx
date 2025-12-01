@@ -55,9 +55,6 @@ const AdminNewsPage = () => {
   const [imageFiles, setImageFiles] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
 
-  /* ============================
-        FIX ĐƯỜNG DẪN ẢNH
-  ============================== */
   const fixPath = (url) => {
     if (!url) return "";
     if (url.startsWith("http")) return url;
@@ -148,7 +145,6 @@ const AdminNewsPage = () => {
     setContent(item.content || "");
     setStatus(item.status);
 
-    // Chuẩn hoá ảnh cũ thành string[]
     setExistingImages(
       Array.isArray(item.images)
         ? item.images.map((img) =>
@@ -408,7 +404,7 @@ const AdminNewsPage = () => {
 
                 <textarea
                   className="w-full border border-gray-200 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none px-3 py-2.5 rounded-xl"
-                  placeholder="Nội dung"
+                  placeholder="Nội dung (có thể là HTML đã format sẵn)"
                   rows={6}
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
@@ -667,8 +663,8 @@ const AdminNewsPage = () => {
               {!loading &&
                 filteredNews.map((item) => {
                   const firstImg =
-                    item.images?.[0] ||
                     item.thumbnail ||
+                    item.images?.[0] ||
                     "https://via.placeholder.com/160x120?text=No+Image";
 
                   return (

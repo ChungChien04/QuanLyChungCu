@@ -3,144 +3,223 @@ const Invoice = require("../models/invoiceModel");
 const Rental = require("../models/rentalModel");
 const SystemSetting = require("../models/systemSettingModel");
 
-// 1. Lấy cài đặt
+/**
+ * 1. Lấy cài đặt hệ thống (đơn giá, phí chung, vệ sinh, ...)
+ */
 exports.getSettings = async (req, res) => {
   try {
     let setting = await SystemSetting.findOne();
-    if (!setting) setting = await SystemSetting.create({}); 
+    if (!setting) {
+      setting = await SystemSetting.create({});
+    }
     res.json(setting);
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) {
+    console.error("getSettings error:", err);
+    res.status(500).json({ message: err.message });
+  }
 };
 
-// 2. Cập nhật cài đặt
+/**
+ * 2. Cập nhật cài đặt hệ thống
+ */
 exports.updateSettings = async (req, res) => {
   try {
     let setting = await SystemSetting.findOne();
     if (!setting) {
-        setting = await SystemSetting.create(req.body);
+      setting = await SystemSetting.create(req.body);
     } else {
-        Object.assign(setting, req.body);
-        await setting.save();
+      Object.assign(setting, req.body);
+      await setting.save();
     }
     res.json(setting);
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) {
+    console.error("updateSettings error:", err);
+    res.status(500).json({ message: err.message });
+  }
 };
 
-// 3. Chuẩn bị dữ liệu lập hóa đơn
+/**
+ * 3. Chuẩn bị dữ liệu lập hóa đơn tháng
+ *    FE gọi: GET /api/invoices/prepare?month=12&year=2025 (tuỳ bạn dùng month/year hay không)
+ */
 exports.prepareInvoices = async (req, res) => {
   try {
+    // Lấy tất cả hợp đồng đang thuê
     const rentals = await Rental.find({ status: "rented" })
-        .populate("apartment", "title number")
-        .populate("user", "name email");
+      .populate("apartment", "title number")
+      .populate("user", "name email");
 
-    const setting = await SystemSetting.findOne() || new SystemSetting();
-    
-    const preparedData = await Promise.all(rentals.map(async (r) => {
-      const lastInvoice = await Invoice.findOne({ rental: r._id }).sort({ createdAt: -1 });
-      const oldIndex = lastInvoice ? lastInvoice.electricNewIndex : 0; 
+    // Không có căn hộ nào đang thuê -> trả mảng rỗng, không lỗi
+    if (!rentals.length) {
+      return res.json([]);
+    }
+
+    // Lấy cài đặt hệ thống, nếu chưa có thì tạo với default
+    let setting = await SystemSetting.findOne();
+    if (!setting) {
+      setting = await SystemSetting.create({});
+    }
+
+    const preparedListPromises = rentals.map(async (r) => {
+      // Nếu rental không gắn apartment hoặc user -> bỏ qua để tránh crash
+      if (!r.apartment || !r.user) {
+        return null;
+      }
+
+      // Lấy hoá đơn gần nhất của rental để biết chỉ số điện cũ
+      const lastInvoice = await Invoice.findOne({ rental: r._id }).sort({
+        createdAt: -1,
+      });
+      const oldIndex =
+        lastInvoice && lastInvoice.electricNewIndex != null
+          ? lastInvoice.electricNewIndex
+          : 0;
 
       return {
         rentalId: r._id,
-        apartmentTitle: r.apartment.title,
-        userName: r.user.name,
-        commonFee: setting.commonFee,
-        cleaningFee: setting.cleaningFee,
-        electricPrice: setting.electricityPrice,
+        apartmentId: r.apartment._id,
+        apartmentTitle: r.apartment.title || "",
+        apartmentNumber: r.apartment.number || "",
+        userName: r.user.name || "",
+        userEmail: r.user.email || "",
+        commonFee: setting.commonFee ?? 0,
+        cleaningFee: setting.cleaningFee ?? 0,
+        electricPrice: setting.electricityPrice ?? 0,
         electricOldIndex: oldIndex,
-        electricNewIndex: "",
+        electricNewIndex: "", // FE sẽ nhập
       };
-    }));
+    });
+
+    const preparedDataRaw = await Promise.all(preparedListPromises);
+    // loại bỏ các phần tử null (rental thiếu apartment/user)
+    const preparedData = preparedDataRaw.filter(Boolean);
 
     res.json(preparedData);
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) {
+    console.error("prepareInvoices error:", err);
+    res
+      .status(500)
+      .json({ message: "Lỗi server khi chuẩn bị dữ liệu hóa đơn." });
+  }
 };
 
-// 4. Tạo hóa đơn
+/**
+ * 4. Tạo hoá đơn hàng loạt từ dữ liệu FE gửi lên
+ */
 exports.createInvoices = async (req, res) => {
   try {
-    const { invoices, month, year } = req.body; 
+    const { invoices, month, year } = req.body;
     const createdInvoices = [];
 
     for (const item of invoices) {
-        if (item.electricNewIndex === "" || Number(item.electricNewIndex) < item.electricOldIndex) continue;
+      // Bỏ qua dòng chưa nhập chỉ số mới hoặc nhập sai
+      if (
+        item.electricNewIndex === "" ||
+        Number(item.electricNewIndex) < item.electricOldIndex
+      ) {
+        continue;
+      }
 
-        const usage = item.electricNewIndex - item.electricOldIndex;
-        
-        // Ép kiểu số để tính toán
-        const electricPrice = Number(item.electricPrice);
-        const commonFee = Number(item.commonFee);
-        const cleaningFee = Number(item.cleaningFee);
+      const usage =
+        Number(item.electricNewIndex) - Number(item.electricOldIndex);
 
-        const electricTotal = usage * electricPrice;
-        const totalAmount = commonFee + cleaningFee + electricTotal;
+      const electricPrice = Number(item.electricPrice) || 0;
+      const commonFee = Number(item.commonFee) || 0;
+      const cleaningFee = Number(item.cleaningFee) || 0;
 
-        const rental = await Rental.findById(item.rentalId);
+      const electricTotal = usage * electricPrice;
+      const totalAmount = commonFee + cleaningFee + electricTotal;
 
-        const newInvoice = await Invoice.create({
-            rental: item.rentalId,
-            user: rental.user,
-            apartment: rental.apartment,
-            month,
-            year,
-            commonFee,
-            cleaningFee,
-            electricOldIndex: item.electricOldIndex,
-            electricNewIndex: item.electricNewIndex,
-            electricUsage: usage,
-            electricPrice,
-            electricTotal,
-            totalAmount,
-            status: "unpaid"
-        });
-        createdInvoices.push(newInvoice);
+      const rental = await Rental.findById(item.rentalId);
+      if (!rental) continue;
+
+      const newInvoice = await Invoice.create({
+        rental: item.rentalId,
+        user: rental.user,
+        apartment: rental.apartment,
+        month,
+        year,
+        commonFee,
+        cleaningFee,
+        electricOldIndex: item.electricOldIndex,
+        electricNewIndex: item.electricNewIndex,
+        electricUsage: usage,
+        electricPrice,
+        electricTotal,
+        totalAmount,
+        status: "unpaid",
+      });
+
+      createdInvoices.push(newInvoice);
     }
 
-    res.status(201).json({ message: `Đã tạo ${createdInvoices.length} hóa đơn`, data: createdInvoices });
-  } catch (err) { res.status(500).json({ message: err.message }); }
+    res.status(201).json({
+      message: `Đã tạo ${createdInvoices.length} hóa đơn`,
+      data: createdInvoices,
+    });
+  } catch (err) {
+    console.error("createInvoices error:", err);
+    res.status(500).json({ message: err.message });
+  }
 };
 
-// 5. [QUAN TRỌNG] User xem hóa đơn
+/**
+ * 5. [USER] Xem hóa đơn của một rental
+ */
 exports.getMyInvoices = async (req, res) => {
   try {
     const { rentalId } = req.params;
     const rental = await Rental.findById(rentalId);
     if (!rental || rental.user.toString() !== req.user._id.toString()) {
-        return res.status(403).json({ message: "Không có quyền truy cập" });
+      return res.status(403).json({ message: "Không có quyền truy cập" });
     }
 
-    const invoices = await Invoice.find({ rental: rentalId }).sort({ createdAt: -1 });
-    res.json(invoices);
-  } catch (err) { res.status(500).json({ message: err.message }); }
-};4
-// 6. [USER] Đếm số hóa đơn CHƯA THANH TOÁN (Dùng cho chấm đỏ Navbar)
-exports.getUnpaidCount = async (req, res) => {
-  try {
-    const count = await Invoice.countDocuments({ 
-      user: req.user._id, 
-      status: "unpaid" 
+    const invoices = await Invoice.find({ rental: rentalId }).sort({
+      createdAt: -1,
     });
-    res.json({ count });
+    res.json(invoices);
   } catch (err) {
+    console.error("getMyInvoices error:", err);
     res.status(500).json({ message: err.message });
   }
 };
-// 7. [ADMIN] Lấy danh sách hóa đơn (Có lọc theo tháng/năm)
+
+/**
+ * 6. [USER] Đếm số hóa đơn CHƯA THANH TOÁN
+ */
+exports.getUnpaidCount = async (req, res) => {
+  try {
+    const count = await Invoice.countDocuments({
+      user: req.user._id,
+      status: "unpaid",
+    });
+    res.json({ count });
+  } catch (err) {
+    console.error("getUnpaidCount error:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/**
+ * 7. [ADMIN] Lấy danh sách hoá đơn (có thể lọc theo tháng/năm/trạng thái)
+ */
 exports.getAdminInvoices = async (req, res) => {
   try {
     const { month, year, status } = req.query;
-    let query = {};
+    const query = {};
 
     if (month) query.month = month;
     if (year) query.year = year;
-    if (status) query.status = status; 
+    if (status) query.status = status;
 
     const invoices = await Invoice.find(query)
       .populate("apartment", "title")
       .populate("user", "name")
-      .sort({ createdAt: -1 }); 
+      .sort({ createdAt: -1 });
 
     res.json(invoices);
   } catch (err) {
+    console.error("getAdminInvoices error:", err);
     res.status(500).json({ message: err.message });
   }
 };

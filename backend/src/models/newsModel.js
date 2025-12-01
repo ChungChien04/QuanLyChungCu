@@ -1,3 +1,4 @@
+// backend/src/models/newsModel.js
 const mongoose = require("mongoose");
 
 const newsSchema = new mongoose.Schema(
@@ -6,13 +7,14 @@ const newsSchema = new mongoose.Schema(
     description: { type: String, default: "" },
     content: { type: String, required: true },
 
-    // ✅ mới: lưu nhiều ảnh
-    images: [{ type: String, default: [] }],
+    // đúng chuẩn array
+    images: { type: [String], default: [] },
 
-    // (tuỳ chọn) giữ thumbnail để tương thích, dùng ảnh đầu làm thumbnail
+    // ảnh đại diện - tự động lấy ảnh đầu
     thumbnail: { type: String, default: "" },
 
     status: { type: Boolean, default: true },
+
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
