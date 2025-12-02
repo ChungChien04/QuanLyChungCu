@@ -105,10 +105,16 @@ const AdminReviewPage = () => {
 
   if (!user || user.role !== "admin") {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-emerald-50 flex items-center justify-center px-4">
-        <p className="text-center text-red-600 bg-white px-6 py-4 rounded-2xl shadow border border-red-100 text-sm md:text-base">
-          Bạn không có quyền truy cập trang này.
-        </p>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white border border-red-100 rounded-2xl shadow-lg p-6">
+          <p className="text-sm font-semibold text-red-600 mb-1">
+            Truy cập bị từ chối
+          </p>
+          <p className="text-sm text-slate-600">
+            Bạn không có quyền truy cập trang quản trị này. Vui lòng đăng nhập
+            bằng tài khoản admin.
+          </p>
+        </div>
       </div>
     );
   }
@@ -116,254 +122,417 @@ const AdminReviewPage = () => {
   const renderStatusBadge = (status) => {
     if (status === "pending") {
       return (
-        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-50 text-yellow-700 border border-yellow-200">
+        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
           Chờ duyệt
         </span>
       );
     }
     if (status === "approved") {
       return (
-        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
           Đã duyệt
         </span>
       );
     }
     return (
-      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-50 text-gray-600 border border-gray-200">
+      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-50 text-slate-600 border border-slate-200">
+        <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
         Ẩn
       </span>
     );
   };
 
+  // Stats nhỏ cho dashboard
+  const totalReviews = reviews.length;
+  const pendingCount = reviews.filter((r) => r.status === "pending").length;
+  const approvedCount = reviews.filter((r) => r.status === "approved").length;
+  const hiddenCount = reviews.filter((r) => r.status === "hidden").length;
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-emerald-50">
-      {/* HEADER */}
-      <section className="bg-gradient-to-b from-emerald-50 to-emerald-100/40 border-b border-emerald-50">
-        <div className="max-w-7xl mx-auto px-6 pt-[96px] pb-6">
-          <p className="text-xs uppercase tracking-[0.22em] text-emerald-500 mb-2">
-            Admin panel
-          </p>
-          <h1 className="text-3xl md:text-4xl font-bold text-emerald-700 mb-1">
-            Quản lý đánh giá
-          </h1>
-          <p className="text-sm md:text-base text-emerald-900/80 max-w-xl">
-            Xem, duyệt, ẩn và phản hồi các đánh giá của khách hàng cho từng căn
-            hộ.
-          </p>
-        </div>
-      </section>
-
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* LỌC */}
-        <div className="bg-white shadow-md rounded-2xl p-5 border border-gray-200 mb-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <span className="font-semibold text-gray-800 text-sm">
-                Lọc theo trạng thái:
+    <div className="min-h-screen bg-slate-50">
+      {/* TOP BAR */}
+      <header className="fixed inset-x-0 top-0 z-30 bg-white/80 backdrop-blur border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+          <div className="flex flex-col">
+            <span className="text-[11px] uppercase tracking-[0.2em] text-emerald-500 font-semibold">
+              Admin · Reviews
+            </span>
+            <div className="flex items-center gap-2 mt-0.5">
+              <h1 className="text-base md:text-lg font-semibold text-slate-900">
+                Quản lý đánh giá khách hàng
+              </h1>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                {totalReviews} đánh giá
               </span>
-
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none"
-              >
-                <option value="all">Tất cả</option>
-                <option value="pending">Chờ duyệt</option>
-                <option value="approved">Đã duyệt</option>
-                <option value="hidden">Ẩn</option>
-              </select>
             </div>
+          </div>
 
-            {loading && (
-              <p className="text-xs text-gray-500 italic">
-                Đang tải danh sách đánh giá...
-              </p>
-            )}
+          <div className="hidden md:flex items-center gap-3 text-xs text-slate-500">
+            <span className="inline-flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              Online
+            </span>
+            <div className="w-px h-4 bg-slate-200" />
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-slate-700">
+                {user?.name || user?.email}
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 font-semibold">
+                ADMIN
+              </span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 md:px-6 pt-24 pb-10 space-y-6">
+{/* BREADCRUMB + MÔ TẢ – LÀM NỔI BẬT HƠN */}
+<section className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-sky-50 shadow-sm px-4 py-4 md:px-6 md:py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+  {/* Accent decor */}
+  <div className="pointer-events-none absolute inset-y-0 right-0 w-1/3 opacity-40">
+    <div className="h-full w-full bg-[radial-gradient(circle_at_top,_#22c55e33,_transparent_60%)]" />
+  </div>
+
+  <div className="relative z-10">
+    <nav className="flex items-center gap-1 text-xs text-emerald-600 mb-1">
+      <span className="font-medium">Dashboard</span>
+      <span className="mx-1 text-emerald-300">/</span>
+      <span className="text-emerald-800 font-semibold">
+        Đánh giá khách hàng
+      </span>
+    </nav>
+
+    <h2 className="text-base md:text-lg font-semibold text-slate-900 mb-1.5">
+      Trung tâm quản lý đánh giá
+    </h2>
+
+    <p className="text-xs md:text-sm text-slate-600 max-w-2xl">
+      Theo dõi và quản lý các đánh giá cho căn hộ, duyệt hiển thị trên website
+      và phản hồi tới khách hàng một cách chuyên nghiệp.
+    </p>
+  </div>
+
+  <div className="relative z-10 flex flex-col items-start md:items-end gap-2 text-xs">
+    <span className="inline-flex items-center gap-2 rounded-full bg-white/80 border border-emerald-100 px-3 py-1 shadow-sm">
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+      <span className="font-medium text-emerald-700">
+        Trung tâm đánh giá đang hoạt động
+      </span>
+    </span>
+    <span className="text-[11px] text-slate-500">
+      Bạn có thể duyệt, ẩn, xoá và phản hồi đánh giá tại đây.
+    </span>
+  </div>
+</section>
+
+
+        {/* CARDS THỐNG KÊ NHANH */}
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-4 py-3.5">
+            <p className="text-xs text-slate-500 mb-1">Tổng đánh giá</p>
+            <p className="text-xl font-semibold text-slate-900">
+              {totalReviews}
+            </p>
+          </div>
+          <div className="bg-white rounded-2xl border border-amber-100 shadow-sm px-4 py-3.5">
+            <p className="text-xs text-amber-700 mb-1">Chờ duyệt</p>
+            <p className="text-xl font-semibold text-amber-700">
+              {pendingCount}
+            </p>
+          </div>
+          <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm px-4 py-3.5">
+            <p className="text-xs text-emerald-700 mb-1">Đã duyệt</p>
+            <p className="text-xl font-semibold text-emerald-700">
+              {approvedCount}
+            </p>
+          </div>
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-4 py-3.5">
+            <p className="text-xs text-slate-600 mb-1">Đang ẩn</p>
+            <p className="text-xl font-semibold text-slate-700">
+              {hiddenCount}
+            </p>
+          </div>
+        </section>
+
+        {/* THANH LỌC */}
+        <section className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 md:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3">
+            <span className="text-xs font-medium text-slate-600">
+              Lọc theo trạng thái:
+            </span>
+            <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 p-1">
+              <button
+                type="button"
+                onClick={() => setStatusFilter("all")}
+                className={`px-3 py-1.5 text-xs rounded-full font-medium transition ${
+                  statusFilter === "all"
+                    ? "bg-white shadow-sm text-slate-900"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Tất cả
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter("pending")}
+                className={`px-3 py-1.5 text-xs rounded-full font-medium transition ${
+                  statusFilter === "pending"
+                    ? "bg-white shadow-sm text-amber-700"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Chờ duyệt
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter("approved")}
+                className={`px-3 py-1.5 text-xs rounded-full font-medium transition ${
+                  statusFilter === "approved"
+                    ? "bg-white shadow-sm text-emerald-700"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Đã duyệt
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter("hidden")}
+                className={`px-3 py-1.5 text-xs rounded-full font-medium transition ${
+                  statusFilter === "hidden"
+                    ? "bg-white shadow-sm text-slate-700"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Ẩn
+              </button>
+            </div>
           </div>
 
           {error && (
-            <p className="text-red-600 text-sm mt-3 bg-red-50 border border-red-100 px-3 py-2 rounded-xl">
+            <p className="text-xs text-red-600 bg-red-50 border border-red-100 px-3 py-2 rounded-xl">
               {error}
             </p>
           )}
-        </div>
+        </section>
 
-        {/* TABLE */}
-        <div className="bg-white shadow-xl rounded-2xl border border-gray-200 overflow-hidden overflow-x-auto">
-          <table className="min-w-[1000px] w-full text-sm">
-            <thead className="bg-emerald-50/80 border-b border-gray-200">
-              <tr className="text-gray-700">
-                <th className="px-3 py-3 text-left font-semibold">Căn hộ</th>
-                <th className="px-3 py-3 text-left font-semibold">Người dùng</th>
-                <th className="px-3 py-3 text-left font-semibold">Điểm</th>
-                <th className="px-3 py-3 text-left font-semibold">Nội dung</th>
-                <th className="px-3 py-3 text-left font-semibold">Trạng thái</th>
-                <th className="px-3 py-3 text-left font-semibold">Ngày</th>
-                <th className="px-3 py-3 text-left font-semibold">Phản hồi</th>
-                <th className="px-3 py-3 text-left font-semibold">Hành động</th>
-              </tr>
-            </thead>
+        {/* BẢNG DANH SÁCH */}
+        <section className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="max-h-[70vh] overflow-auto">
+            <table className="min-w-[1000px] w-full text-sm">
+              <thead className="bg-slate-50/90 border-b border-slate-200 sticky top-0 z-10">
+                <tr className="text-[11px] uppercase tracking-wide text-slate-500">
+                  <th className="px-4 py-3 text-left font-semibold">Căn hộ</th>
+                  <th className="px-4 py-3 text-left font-semibold">
+                    Người dùng
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold w-20">
+                    Điểm
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold">
+                    Nội dung
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold">
+                    Trạng thái
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold">Ngày</th>
+                  <th className="px-4 py-3 text-left font-semibold">
+                    Phản hồi
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold w-64">
+                    Hành động
+                  </th>
+                </tr>
+              </thead>
 
-            <tbody>
-              {reviews.map((r) => (
-                <tr
-                  key={r._id}
-                  className="border-t border-gray-100 hover:bg-emerald-50/40 align-top"
-                >
-                  <td className="px-3 py-3">
-                    <p className="font-medium text-gray-900 line-clamp-2">
-                      {r.apartment?.title || "—"}
-                    </p>
-                  </td>
+              <tbody>
+                {reviews.map((r) => (
+                  <tr
+                    key={r._id}
+                    className="border-t border-slate-100 hover:bg-slate-50/80 align-top transition-colors"
+                  >
+                    {/* Căn hộ */}
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-slate-900 line-clamp-2">
+                        {r.apartment?.title || "—"}
+                      </p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        ID: {r.apartment?._id || "N/A"}
+                      </p>
+                    </td>
 
-                  <td className="px-3 py-3">
-                    <p className="text-gray-800">
-                      {r.user?.name || r.user?.email}
-                    </p>
-                  </td>
-
-                  <td className="px-3 py-3">
-                    <span className="inline-flex items-center gap-1 text-amber-600 font-semibold">
-                      ⭐ <span>{r.rating}</span>
-                    </span>
-                  </td>
-
-                  <td className="px-3 py-3 max-w-xs">
-                    <p className="text-gray-800 text-sm break-words whitespace-pre-wrap">
-                      {r.content}
-                    </p>
-                  </td>
-
-                  <td className="px-3 py-3">
-                    {renderStatusBadge(r.status)}
-                  </td>
-
-                  <td className="px-3 py-3">
-                    <p className="text-xs text-gray-600">
-                      {new Date(r.createdAt).toLocaleString("vi-VN")}
-                    </p>
-                  </td>
-
-                  {/* PHẢN HỒI */}
-                  <td className="px-3 py-3 max-w-xs">
-                    {r.reply?.content ? (
-                      <div className="space-y-1">
-                        <p className="text-gray-800 text-sm break-words whitespace-pre-wrap">
-                          {r.reply.content}
+                    {/* User */}
+                    <td className="px-4 py-3">
+                      <p className="text-xs font-medium text-slate-800">
+                        {r.user?.name || r.user?.email}
+                      </p>
+                      {r.user?.email && (
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          {r.user.email}
                         </p>
-                        <p className="text-[11px] text-gray-500">
-                          {new Date(r.reply.repliedAt).toLocaleString("vi-VN")}
-                        </p>
-                      </div>
-                    ) : (
-                      <span className="text-gray-400 text-xs">
-                        Chưa có phản hồi
+                      )}
+                    </td>
+
+                    {/* Rating */}
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center gap-1 text-amber-600 font-semibold text-sm">
+                        <span className="text-base">★</span>
+                        <span>{r.rating}</span>
                       </span>
-                    )}
-                  </td>
+                    </td>
 
-                  {/* BUTTONS */}
-                  <td className="px-3 py-3 min-w-[190px]">
-                    <div className="flex flex-col gap-1.5">
-                      {r.status !== "approved" && (
-                        <button
-                          onClick={() => updateStatus(r._id, "approved")}
-                          className="w-full bg-emerald-600 text-white px-2 py-1.5 rounded-xl text-xs font-medium hover:bg-emerald-700 shadow-sm"
-                        >
-                          Duyệt
-                        </button>
-                      )}
+                    {/* Content */}
+                    <td className="px-4 py-3 max-w-xs">
+                      <p className="text-xs text-slate-800 break-words whitespace-pre-wrap">
+                        {r.content}
+                      </p>
+                    </td>
 
-                      {r.status !== "hidden" && (
-                        <button
-                          onClick={() => updateStatus(r._id, "hidden")}
-                          className="w-full bg-amber-500 text-white px-2 py-1.5 rounded-xl text-xs font-medium hover:bg-amber-600"
-                        >
-                          Ẩn
-                        </button>
-                      )}
+                    {/* Status */}
+                    <td className="px-4 py-3">{renderStatusBadge(r.status)}</td>
 
-                      <button
-                        onClick={() => deleteReview(r._id)}
-                        className="w-full bg-red-500 text-white px-2 py-1.5 rounded-xl text-xs font-medium hover:bg-red-600"
-                      >
-                        Xóa
-                      </button>
+                    {/* Date */}
+                    <td className="px-4 py-3">
+                      <p className="text-[11px] text-slate-500">
+                        {new Date(r.createdAt).toLocaleString("vi-VN")}
+                      </p>
+                    </td>
 
-                      <button
-                        onClick={() => startReply(r)}
-                        className="w-full bg-blue-600 text-white px-2 py-1.5 rounded-xl text-xs font-medium hover:bg-blue-700"
-                      >
-                        {r.reply?.content ? "Sửa phản hồi" : "Phản hồi"}
-                      </button>
-
-                      {r.reply?.content && (
-                        <button
-                          onClick={() => deleteReply(r._id)}
-                          className="w-full bg-gray-500 text-white px-2 py-1.5 rounded-xl text-xs font-medium hover:bg-gray-600"
-                        >
-                          Xóa phản hồi
-                        </button>
-                      )}
-
-                      {activeReplyId === r._id && (
-                        <div className="mt-2 p-2 border border-gray-200 rounded-xl bg-gray-50">
-                          <textarea
-                            rows={3}
-                            className="w-full border border-gray-200 p-2 rounded-xl text-xs mb-2 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none"
-                            value={replyContent}
-                            onChange={(e) => setReplyContent(e.target.value)}
-                          />
-
-                          <div className="flex gap-2">
-                            <button
-                              onClick={submitReply}
-                              className="flex-1 bg-emerald-600 text-white py-1.5 rounded-xl text-xs font-semibold hover:bg-emerald-700"
-                            >
-                              Lưu
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                setActiveReplyId(null);
-                                setReplyContent("");
-                              }}
-                              className="flex-1 bg-gray-200 text-gray-700 py-1.5 rounded-xl text-xs font-semibold hover:bg-gray-300"
-                            >
-                              Hủy
-                            </button>
-                          </div>
+                    {/* Reply */}
+                    <td className="px-4 py-3 max-w-xs">
+                      {r.reply?.content ? (
+                        <div className="space-y-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                          <p className="text-xs text-slate-800 break-words whitespace-pre-wrap">
+                            {r.reply.content}
+                          </p>
+                          <p className="text-[10px] text-slate-500">
+                            Phản hồi lúc{" "}
+                            {new Date(
+                              r.reply.repliedAt
+                            ).toLocaleString("vi-VN")}
+                          </p>
                         </div>
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">
+                          Chưa có phản hồi
+                        </span>
                       )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
 
-              {!loading && reviews.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={8}
-                    className="px-4 py-10 text-center text-gray-500 text-sm"
-                  >
-                    Chưa có đánh giá nào.
-                  </td>
-                </tr>
-              )}
+                    {/* Actions – ĐÃ THIẾT KẾ LẠI */}
+                    <td className="px-4 py-3">
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 space-y-2">
+                        {/* Nhóm nút trạng thái + xoá */}
+                        <div className="flex flex-col gap-1.5">
+                          {r.status !== "approved" && (
+                            <button
+                              onClick={() => updateStatus(r._id, "approved")}
+                              className="w-full bg-emerald-600 text-white px-2 py-1.5 rounded-lg text-[11px] font-medium hover:bg-emerald-700 shadow-sm transition"
+                            >
+                              Duyệt hiển thị
+                            </button>
+                          )}
 
-              {loading && (
-                <tr>
-                  <td
-                    colSpan={8}
-                    className="px-4 py-8 text-center text-gray-600 text-sm"
-                  >
-                    Đang tải dữ liệu...
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                          {r.status !== "hidden" && (
+                            <button
+                              onClick={() => updateStatus(r._id, "hidden")}
+                              className="w-full border border-amber-300 bg-amber-50 text-amber-800 px-2 py-1.5 rounded-lg text-[11px] font-medium hover:bg-amber-100 transition"
+                            >
+                              Ẩn đánh giá
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => deleteReview(r._id)}
+                            className="w-full border border-red-300 bg-white text-red-600 px-2 py-1.5 rounded-lg text-[11px] font-medium hover:bg-red-50 transition"
+                          >
+                            Xóa đánh giá
+                          </button>
+                        </div>
+
+                        {/* Nhóm nút phản hồi */}
+                        <div className="border-t border-slate-200 pt-2 flex flex-col gap-1.5">
+                          <button
+                            onClick={() => startReply(r)}
+                            className="w-full bg-sky-600 text-white px-2 py-1.5 rounded-lg text-[11px] font-medium hover:bg-sky-700 transition"
+                          >
+                            {r.reply?.content ? "Sửa phản hồi" : "Phản hồi"}
+                          </button>
+
+                          {r.reply?.content && (
+                            <button
+                              onClick={() => deleteReply(r._id)}
+                              className="w-full bg-slate-500 text-white px-2 py-1.5 rounded-lg text-[11px] font-medium hover:bg-slate-600 transition"
+                            >
+                              Xóa phản hồi
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Ô nhập phản hồi inline */}
+                        {activeReplyId === r._id && (
+                          <div className="mt-2 p-2 border border-slate-200 rounded-xl bg-white">
+                            <textarea
+                              rows={3}
+                              className="w-full border border-slate-200 p-2 rounded-xl text-xs mb-2 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none"
+                              value={replyContent}
+                              onChange={(e) =>
+                                setReplyContent(e.target.value)
+                              }
+                              placeholder="Nhập nội dung phản hồi cho khách hàng..."
+                            />
+
+                            <div className="flex gap-2">
+                              <button
+                                onClick={submitReply}
+                                className="flex-1 bg-emerald-600 text-white py-1.5 rounded-xl text-[11px] font-semibold hover:bg-emerald-700 transition"
+                              >
+                                Lưu phản hồi
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  setActiveReplyId(null);
+                                  setReplyContent("");
+                                }}
+                                className="flex-1 bg-slate-200 text-slate-700 py-1.5 rounded-xl text-[11px] font-semibold hover:bg-slate-300 transition"
+                              >
+                                Hủy
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+
+                {!loading && reviews.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={8}
+                      className="px-4 py-10 text-center text-slate-500 text-sm"
+                    >
+                      Hiện chưa có đánh giá nào phù hợp với bộ lọc.
+                    </td>
+                  </tr>
+                )}
+
+                {loading && (
+                  <tr>
+                    <td
+                      colSpan={8}
+                      className="px-4 py-8 text-center text-slate-600 text-sm"
+                    >
+                      Đang tải dữ liệu...
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
       </main>
     </div>
   );

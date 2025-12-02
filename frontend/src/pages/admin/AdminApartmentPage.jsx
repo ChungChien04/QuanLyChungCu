@@ -288,39 +288,86 @@ export default function AdminApartmentPage() {
     );
   };
 
+  // ====== THỐNG KÊ NHANH GIỐNG DASHBOARD HÓA ĐƠN ======
+  const totalApts = apartments.length;
+  const availableCount = apartments.filter((a) => a.status === "available")
+    .length;
+  const rentedCount = apartments.filter((a) => a.status === "rented").length;
+  const reservedCount = apartments.filter((a) => a.status === "reserved").length;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-emerald-50">
       <Toast message={toast.message} type={toast.type} />
 
-      {/* HEADER ADMIN */}
+      {/* HEADER ADMIN – hero giống Hóa đơn */}
       <section className="bg-gradient-to-b from-emerald-50 to-emerald-100/40 border-b border-emerald-50">
-        <div className="max-w-7xl mx-auto px-6 pt-[96px] pb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-emerald-500 mb-2">
-              Admin panel
-            </p>
-            <h1 className="text-3xl md:text-4xl font-bold text-emerald-700 mb-1">
-              Quản lý căn hộ
-            </h1>
-            <p className="text-sm md:text-base text-emerald-900/80 max-w-xl">
-              Thêm, chỉnh sửa, theo dõi trạng thái căn hộ và quản lý danh sách
-              hiển thị cho khách hàng.
-            </p>
-          </div>
-
-          <button
-            onClick={() => {
-              resetForm();
-              setShowModal(true);
-            }}
-            className="inline-flex items-center justify-center px-5 py-2.5 rounded-2xl bg-emerald-600 text-white text-sm font-semibold shadow-md hover:bg-emerald-700 transition-colors"
-          >
-            <span className="mr-2 text-lg">＋</span> Thêm căn hộ mới
-          </button>
+        <div className="max-w-7xl mx-auto px-6 pt-[96px] pb-6">
+          <p className="text-xs uppercase tracking-[0.22em] text-emerald-500 mb-2">
+            Admin panel
+          </p>
+          <h1 className="text-3xl md:text-4xl font-bold text-emerald-700 mb-1 text-balance">
+            Trung tâm quản lý danh sách căn hộ
+          </h1>
+          <p className="text-sm md:text-base text-emerald-900/80 max-w-2xl">
+            Thêm, chỉnh sửa và quản lý trạng thái căn hộ để hiển thị chính xác
+            cho khách hàng trên website.
+          </p>
         </div>
       </section>
 
-      <main className="max-w-7xl mx-auto px-6 py-10">
+      <main className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+        {/* HÀNG ACTION + THỐNG KÊ (giống style invoice) */}
+        <section className="flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div className="text-sm text-slate-600">
+              <span className="font-semibold text-emerald-700">
+                Dashboard /{" "}
+              </span>
+              <span className="font-semibold text-slate-900">
+                Quản lý căn hộ
+              </span>
+            </div>
+
+            <button
+              onClick={() => {
+                resetForm();
+                setShowModal(true);
+              }}
+              className="inline-flex items-center justify-center px-5 py-2.5 rounded-full bg-emerald-600 text-white text-xs md:text-sm font-semibold shadow-md hover:bg-emerald-700 transition-colors"
+            >
+              <span className="mr-2 text-lg">＋</span> Thêm căn hộ mới
+            </button>
+          </div>
+
+          {/* Cards thống kê */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm px-4 py-3.5">
+              <p className="text-xs text-slate-500 mb-1">Tổng căn hộ</p>
+              <p className="text-xl font-semibold text-emerald-800">
+                {totalApts}
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm px-4 py-3.5">
+              <p className="text-xs text-emerald-700 mb-1">Còn trống</p>
+              <p className="text-xl font-semibold text-emerald-700">
+                {availableCount}
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl border border-yellow-100 shadow-sm px-4 py-3.5">
+              <p className="text-xs text-yellow-700 mb-1">Đang thuê</p>
+              <p className="text-xl font-semibold text-yellow-700">
+                {rentedCount}
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-4 py-3.5">
+              <p className="text-xs text-slate-600 mb-1">Tạm khóa</p>
+              <p className="text-xl font-semibold text-slate-700">
+                {reservedCount}
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* MODAL */}
         {showModal && (
           <div
@@ -522,7 +569,7 @@ export default function AdminApartmentPage() {
         )}
 
         {/* TABLE */}
-        <div className="mt-8 bg-white rounded-2xl shadow-xl border border-gray-200 overflow-x-auto">
+        <div className="mt-4 bg-white rounded-2xl shadow-xl border border-gray-200 overflow-x-auto">
           {loading ? (
             <p className="p-8 text-center text-gray-600 text-sm">
               Đang tải danh sách căn hộ...
@@ -530,26 +577,26 @@ export default function AdminApartmentPage() {
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 bg-emerald-50/70">
-                  <th className="p-3 text-left font-semibold text-gray-700">
+                <tr className="text-white">
+                  <th className="p-3 text-left font-semibold bg-emerald-700 rounded-tl-2xl">
                     Tên
                   </th>
-                  <th className="p-3 text-left font-semibold text-gray-700">
+                  <th className="p-3 text-left font-semibold bg-emerald-700 border-l border-emerald-600">
                     Diện tích
                   </th>
-                  <th className="p-3 text-left font-semibold text-gray-700">
+                  <th className="p-3 text-left font-semibold bg-emerald-700 border-l border-emerald-600">
                     Giá
                   </th>
-                  <th className="p-3 text-left font-semibold text-gray-700">
+                  <th className="p-3 text-left font-semibold bg-emerald-700 border-l border-emerald-600">
                     Trạng thái
                   </th>
-                  <th className="p-3 text-left font-semibold text-gray-700">
+                  <th className="p-3 text-left font-semibold bg-emerald-700 border-l border-emerald-600">
                     Ảnh
                   </th>
-                  <th className="p-3 text-left font-semibold text-gray-700">
+                  <th className="p-3 text-left font-semibold bg-emerald-700 border-l border-emerald-600">
                     Nổi bật
                   </th>
-                  <th className="p-3 text-right font-semibold text-gray-700">
+                  <th className="p-3 text-right font-semibold bg-emerald-700 rounded-tr-2xl border-l border-emerald-600">
                     Hành động
                   </th>
                 </tr>
@@ -561,7 +608,7 @@ export default function AdminApartmentPage() {
                     key={apt._id}
                     className="border-t border-gray-100 hover:bg-emerald-50/40"
                   >
-                    <td className="p-3 align-top">
+                    <td className="p-3 align-top bg-white">
                       <p className="font-medium text-gray-900 line-clamp-2">
                         {apt.title}
                       </p>
@@ -570,19 +617,19 @@ export default function AdminApartmentPage() {
                       </p>
                     </td>
 
-                    <td className="p-3 align-top text-gray-700">
+                    <td className="p-3 align-top text-gray-700 bg-white">
                       {apt.area} m²
                     </td>
 
-                    <td className="p-3 align-top text-emerald-700 font-semibold">
+                    <td className="p-3 align-top text-emerald-700 font-semibold bg-white">
                       {apt.price.toLocaleString()} đ
                     </td>
 
-                    <td className="p-3 align-top">
+                    <td className="p-3 align-top bg-white">
                       {renderStatusBadge(apt.status)}
                     </td>
 
-                    <td className="p-3 align-top">
+                    <td className="p-3 align-top bg-white">
                       <div className="flex gap-1">
                         {apt.images?.slice(0, 3).map((img, i) => (
                           <img
@@ -594,7 +641,7 @@ export default function AdminApartmentPage() {
                       </div>
                     </td>
 
-                    <td className="p-3 align-top">
+                    <td className="p-3 align-top bg-white">
                       {apt.featured ? (
                         <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-50 text-yellow-700 border border-yellow-100">
                           ⭐ Nổi bật
@@ -606,7 +653,7 @@ export default function AdminApartmentPage() {
                       )}
                     </td>
 
-                    <td className="p-3 align-top text-right space-x-2">
+                    <td className="p-3 align-top text-right space-x-2 bg-white">
                       <button
                         onClick={() => handleEdit(apt)}
                         className="inline-flex items-center px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50"
@@ -628,7 +675,7 @@ export default function AdminApartmentPage() {
           )}
 
           {/* PAGINATION */}
-          <div className="flex justify-center gap-2 p-6 border-t border-gray-100">
+          <div className="flex justify-center gap-2 p-6 border-t border-gray-100 bg-white rounded-b-2xl">
             <button
               disabled={currentPage === 1}
               onClick={() => fetchApartments(currentPage - 1)}

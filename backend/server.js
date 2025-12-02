@@ -13,6 +13,9 @@ const rentalRoutes = require("./src/routes/rentalRoutes");
 const newsRoutes = require("./src/routes/newsRoutes");
 const invoiceRoutes = require("./src/routes/invoiceRoutes"); 
 
+// ✅ IMPORT ĐÚNG FILE ADMIN STATS
+const adminStatsRoutes = require("./src/routes/adminStatsRoutes");
+
 dotenv.config();
 
 const app = express();
@@ -43,11 +46,15 @@ app.use('/api/apartments', require('./src/routes/apartmentRoutes'));
 app.use('/api/chatbot', require('./src/routes/chatbotRoutes'));
 app.use('/api/reports', require('./src/routes/reportRoutes'));
 app.use('/api/reviews', require('./src/routes/reviewRoutes'));
+
 app.use("/api/payments", paymentRoutes);
 app.use("/api/rentals", rentalRoutes); 
 app.use("/api/news", newsRoutes);
 
-// 👇 THÊM DÒNG NÀY: Đăng ký đường dẫn cho hóa đơn
+// ⭐ Route Admin Stats
+app.use("/api/admin", adminStatsRoutes);
+
+// ⭐ Route hóa đơn
 app.use("/api/invoices", invoiceRoutes);
 
 // Test route

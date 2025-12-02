@@ -4,13 +4,21 @@ const AdminInvoiceDetailModal = ({ invoice, onClose }) => {
   if (!invoice) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 animate-fadeIn">
-      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-emerald-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-emerald-50 overflow-hidden">
         {/* Header */}
         <div className="bg-emerald-600 text-white px-5 py-4 flex justify-between items-center">
-          <h2 className="text-base md:text-lg font-semibold uppercase tracking-wide">
-            Chi tiết hóa đơn
-          </h2>
+          <div>
+            <h2 className="text-base md:text-lg font-semibold tracking-wide">
+              Chi tiết hóa đơn
+            </h2>
+            <p className="text-[11px] mt-0.5 text-emerald-100">
+              Mã hóa đơn:{" "}
+              <span className="font-mono opacity-90">
+                {invoice._id?.slice(-8) || "---"}
+              </span>
+            </p>
+          </div>
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-full bg-emerald-700/70 hover:bg-emerald-800 flex items-center justify-center text-xl leading-none"
@@ -52,11 +60,12 @@ const AdminInvoiceDetailModal = ({ invoice, onClose }) => {
               <thead className="bg-emerald-50 text-gray-800 font-semibold">
                 <tr>
                   <th className="p-3">Khoản phí</th>
-                  <th className="p-3 text-center">Chi tiết (Chỉ số)</th>
+                  <th className="p-3 text-center">Chi tiết</th>
                   <th className="p-3 text-right">Thành tiền</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
+                {/* Điện */}
                 <tr>
                   <td className="p-3 align-top">Tiền điện</td>
                   <td className="p-3 text-center align-top">
@@ -75,17 +84,23 @@ const AdminInvoiceDetailModal = ({ invoice, onClose }) => {
                   </td>
                 </tr>
 
+                {/* Phí chung */}
                 <tr>
                   <td className="p-3">Phí sinh hoạt chung</td>
-                  <td className="p-3 text-center">—</td>
+                  <td className="p-3 text-center text-xs text-gray-500">
+                    Đã bao gồm bảo trì & vận hành
+                  </td>
                   <td className="p-3 text-right font-medium text-gray-800">
                     {invoice.commonFee?.toLocaleString()} đ
                   </td>
                 </tr>
 
+                {/* Phí vệ sinh */}
                 <tr>
                   <td className="p-3">Phí vệ sinh</td>
-                  <td className="p-3 text-center">—</td>
+                  <td className="p-3 text-center text-xs text-gray-500">
+                    Dọn dẹp khu vực chung
+                  </td>
                   <td className="p-3 text-right font-medium text-gray-800">
                     {invoice.cleaningFee?.toLocaleString()} đ
                   </td>
@@ -108,7 +123,7 @@ const AdminInvoiceDetailModal = ({ invoice, onClose }) => {
             </table>
           </div>
 
-          {/* Trạng thái */}
+          {/* Trạng thái & ngày thanh toán */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pt-1">
             <div className="flex items-center gap-2">
               <span className="text-gray-500 text-xs md:text-sm">

@@ -21,6 +21,7 @@ import AdminApartmentPage from "./pages/admin/AdminApartmentPage";
 import AdminRentalsPage from "./pages/AdminRentalManagement";
 import AdminNewsPage from "./pages/admin/AdminNewsPage";
 import AdminInvoiceManagement from "./pages/admin/AdminInvoiceManagement";
+import AdminDashboard from "./pages/admin/AdminDashboard";// ⭐ THÊM DÒNG NÀY
 
 // Client Pages
 import MyInvoicesPage from "./pages/MyInvoicesPage";
@@ -81,7 +82,19 @@ function App() {
             }
           />
 
-          {/* ================= ADMIN ROUTES ================= */}
+          {/* ============ ADMIN ROUTES ============ */}
+
+          {/* ⭐ DASHBOARD TỔNG */}
+          <Route
+  path="/admin/dashboard"
+  element={
+    <AdminRoute>
+      <AdminDashboard />
+    </AdminRoute>
+  }
+/>
+
+
           <Route
             path="/admin/news"
             element={
@@ -91,7 +104,14 @@ function App() {
             }
           />
 
-          <Route path="/admin/reviews" element={<AdminReviewPage />} />
+          <Route
+            path="/admin/reviews"
+            element={
+              <AdminRoute>
+                <AdminReviewPage />
+              </AdminRoute>
+            }
+          />
 
           <Route
             path="/admin/apartments"
@@ -120,7 +140,7 @@ function App() {
             }
           />
 
-          {/* ================= CLIENT ROUTES ================= */}
+          {/* ============ CLIENT ROUTES ============ */}
           <Route
             path="/profile"
             element={

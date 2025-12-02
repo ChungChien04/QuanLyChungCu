@@ -21,6 +21,7 @@ import {
   ClipboardDocumentListIcon,
   ReceiptPercentIcon,
   StarIcon,
+  ChartBarIcon, // ⬅ THÊM ICON DASHBOARD
 } from "@heroicons/react/24/outline";
 
 const Navbar = () => {
@@ -312,7 +313,9 @@ const Navbar = () => {
 
                       <Link
                         to="/my-invoices"
-                        className={`${navLinkClass("/my-invoices")} relative`}
+                        className={`${navLinkClass(
+                          "/my-invoices"
+                        )} relative`}
                       >
                         Hóa đơn
                         {unpaidCount > 0 && (
@@ -329,7 +332,7 @@ const Navbar = () => {
 
             {/* RIGHT SIDE: AUTH + ADMIN + MOBILE BUTTON */}
             <div className="flex items-center gap-3">
-              {/* ADMIN DROPDOWN (desktop) – UI đẹp kiểu web lớn */}
+              {/* ADMIN DROPDOWN (desktop) */}
               {user && user.role === "admin" && (
                 <div
                   className="relative hidden md:block"
@@ -371,6 +374,26 @@ const Navbar = () => {
                       </div>
 
                       <div className="grid grid-cols-1 gap-1">
+                        {/* DASHBOARD – TỔNG QUAN */}
+                        <Link
+                          to="/admin/dashboard"
+                          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-green-50 transition cursor-pointer"
+                          onClick={() => setAdminDropdownOpen(false)}
+                        >
+                          <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center text-slate-700 border border-slate-100">
+                            <ChartBarIcon className="w-5 h-5" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-gray-900">
+                              Dashboard tổng quan
+                            </p>
+                            <p className="text-[11px] text-gray-500">
+                              Thống kê nhanh hợp đồng, hóa đơn, cư dân, doanh
+                              thu.
+                            </p>
+                          </div>
+                        </Link>
+
                         <Link
                           to="/admin/apartments"
                           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-green-50 transition cursor-pointer"
@@ -607,6 +630,18 @@ const Navbar = () => {
                           <Cog8ToothIcon className="w-4 h-4 text-green-700" />
                           Quản trị hệ thống
                         </p>
+
+                        {/* DASHBOARD MOBILE */}
+                        <Link
+                          to="/admin/dashboard"
+                          onClick={() => setMobileOpen(false)}
+                          className="flex items-center gap-2 py-1.5 text-gray-700 hover:text-green-700"
+                        >
+                          <span className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center text-slate-700 border border-slate-100">
+                            <ChartBarIcon className="w-4 h-4" />
+                          </span>
+                          <span className="text-sm">Dashboard tổng quan</span>
+                        </Link>
 
                         <Link
                           to="/admin/apartments"

@@ -25,7 +25,7 @@ const Toast = ({ message, type }) => {
 };
 
 const AdminNewsPage = () => {
-  const { token } = useAuth();
+  const { user, token } = useAuth() || {};
 
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -287,42 +287,105 @@ const AdminNewsPage = () => {
     setExistingImages((prev) => prev.filter((_, i) => i !== idx));
   };
 
+  // Stats cho dashboard
+  const totalNews = news.length;
+  const activeNews = news.filter((n) => n.status === true).length;
+  const inactiveNews = totalNews - activeNews;
+
   /* ============================
         RENDER
   ============================== */
+
+  // Chặn nếu không phải admin
+  if (!user || user.role !== "admin") {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <Toast message={toast.message} type={toast.type} />
+        <div className="max-w-md w-full bg-white border border-red-100 rounded-2xl shadow-lg p-6">
+          <p className="text-sm font-semibold text-red-600 mb-1">
+            Truy cập bị từ chối
+          </p>
+          <p className="text-sm text-slate-600">
+            Bạn không có quyền truy cập trang quản trị tin tức. Vui lòng đăng
+            nhập bằng tài khoản admin.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-emerald-50">
       <Toast message={toast.message} type={toast.type} />
 
-      {/* HEADER */}
+      {/* HERO HEADER – giống Hóa đơn & Căn hộ */}
       <section className="bg-gradient-to-b from-emerald-50 to-emerald-100/40 border-b border-emerald-50">
-        <div className="max-w-7xl mx-auto px-6 pt-[96px] pb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-emerald-500 mb-2">
-              Admin panel
-            </p>
-            <h1 className="text-3xl md:text-4xl font-bold text-emerald-700 mb-1">
-              Quản lý tin tức
-            </h1>
-            <p className="text-sm md:text-base text-emerald-900/80 max-w-xl">
-              Tạo, chỉnh sửa và quản lý các tin tức hiển thị trên trang cho
-              khách hàng.
-            </p>
-          </div>
-
-          <button
-            onClick={() => {
-              resetForm();
-              setShowModal(true);
-            }}
-            className="inline-flex items-center justify-center px-5 py-2.5 rounded-2xl bg-emerald-600 text-white text-sm font-semibold shadow-md hover:bg-emerald-700 transition-colors"
-          >
-            <span className="mr-2 text-lg">＋</span> Thêm tin mới
-          </button>
+        <div className="max-w-7xl mx-auto px-6 pt-[96px] pb-6">
+          <p className="text-xs uppercase tracking-[0.22em] text-emerald-500 mb-2">
+            Admin panel
+          </p>
+          <h1 className="text-3xl md:text-4xl font-bold text-emerald-700 mb-1 text-balance">
+            Quản lý tin tức
+          </h1>
+          <p className="text-sm md:text-base text-emerald-900/80 max-w-2xl">
+            Tạo, chỉnh sửa và quản lý các tin tức hiển thị trên trang dành cho
+            cư dân và khách hàng.
+          </p>
         </div>
       </section>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="max-w-7xl mx-auto px-6 pt-8 pb-10 space-y-6">
+        {/* BREADCRUMB + CTA + STATS giống pattern mới */}
+        <section className="flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div className="text-sm text-slate-600">
+              <span className="font-semibold text-emerald-700">
+                Dashboard /{" "}
+              </span>
+              <span className="font-semibold text-slate-900">
+                Quản lý tin tức
+              </span>
+            </div>
+
+            <div className="flex flex-col items-start md:items-end gap-1 text-xs">
+              <button
+                onClick={() => {
+                  resetForm();
+                  setShowModal(true);
+                }}
+                className="inline-flex items-center justify-center px-5 py-2.5 rounded-full bg-emerald-600 text-white text-xs md:text-sm font-semibold shadow-md hover:bg-emerald-700 transition-colors"
+              >
+                <span className="mr-2 text-lg leading-none">＋</span> Thêm tin mới
+              </button>
+              <span className="text-[11px] text-slate-500">
+                Quản lý tiêu đề, nội dung, trạng thái và hình ảnh bài viết.
+              </span>
+            </div>
+          </div>
+
+          {/* CARDS THỐNG KÊ NHANH */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-4 py-3.5">
+              <p className="text-xs text-slate-500 mb-1">Tổng bài viết</p>
+              <p className="text-xl font-semibold text-slate-900">
+                {totalNews}
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm px-4 py-3.5">
+              <p className="text-xs text-emerald-700 mb-1">Đang hiển thị</p>
+              <p className="text-xl font-semibold text-emerald-700">
+                {activeNews}
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-4 py-3.5">
+              <p className="text-xs text-slate-600 mb-1">Đang tắt</p>
+              <p className="text-xl font-semibold text-slate-700">
+                {inactiveNews}
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* CREATE POPUP */}
         {showModal && (
           <div
@@ -379,7 +442,7 @@ const AdminNewsPage = () => {
                     accept="image/*"
                     multiple
                     onChange={handlePickImages}
-                    className="border border-dashed border-gray-300 hover:border-emerald-400 transition-colors px-3 py-2.5 rounded-xl w-full text-xs"
+                    className="border border-dashed border-gray-300 hover:border-emerald-400 transition-colors px-3 py-2.5 rounded-xl w-full text-xs bg-gray-50"
                   />
                   {imageFiles.length > 0 && (
                     <div className="flex flex-wrap gap-3 mt-3">
@@ -499,7 +562,7 @@ const AdminNewsPage = () => {
                     accept="image/*"
                     multiple
                     onChange={handlePickImages}
-                    className="border border-dashed border-gray-300 hover:border-emerald-400 transition-colors px-3 py-2.5 rounded-xl w-full text-xs"
+                    className="border border-dashed border-gray-300 hover:border-emerald-400 transition-colors px-3 py-2.5 rounded-xl w-full text-xs bg-gray-50"
                   />
                 </div>
 
@@ -597,7 +660,7 @@ const AdminNewsPage = () => {
         )}
 
         {/* Filters */}
-        <div className="bg-white p-5 rounded-2xl shadow-md border border-gray-200 mb-6">
+        <section className="bg-white p-5 rounded-2xl shadow-md border border-gray-200 mb-2">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
               <label className="text-xs font-semibold text-gray-700 mb-1 block">
@@ -645,17 +708,25 @@ const AdminNewsPage = () => {
               </button>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* TABLE */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden overflow-x-auto">
+        <section className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden overflow-x-auto">
           <table className="w-full min-w-[900px] text-sm">
-            <thead className="bg-emerald-50/70 border-b border-gray-200">
-              <tr className="text-gray-700">
-                <th className="p-3 w-36 text-left font-semibold">Hình ảnh</th>
-                <th className="p-3 text-left font-semibold">Tiêu đề</th>
-                <th className="p-3 w-32 text-left font-semibold">Trạng thái</th>
-                <th className="p-3 w-40 text-left font-semibold">Hành động</th>
+            <thead>
+              <tr className="text-white">
+                <th className="p-3 w-36 text-left font-semibold bg-emerald-700 rounded-tl-2xl">
+                  Hình ảnh
+                </th>
+                <th className="p-3 text-left font-semibold bg-emerald-700 border-l border-emerald-600">
+                  Tiêu đề
+                </th>
+                <th className="p-3 w-32 text-left font-semibold bg-emerald-700 border-l border-emerald-600">
+                  Trạng thái
+                </th>
+                <th className="p-3 w-40 text-left font-semibold bg-emerald-700 rounded-tr-2xl border-l border-emerald-600">
+                  Hành động
+                </th>
               </tr>
             </thead>
 
@@ -670,16 +741,16 @@ const AdminNewsPage = () => {
                   return (
                     <tr
                       key={item._id}
-                      className="border-t border-gray-100 hover:bg-emerald-50/40"
+                      className="border-t border-gray-100 hover:bg-emerald-50/40 transition-colors"
                     >
-                      <td className="p-3 align-top">
+                      <td className="p-3 align-top bg-white">
                         <img
                           src={fixPath(firstImg)}
                           className="w-28 h-20 object-cover rounded-xl border border-gray-200"
                         />
                       </td>
 
-                      <td className="p-3 align-top">
+                      <td className="p-3 align-top bg-white">
                         <p className="font-semibold text-gray-900 line-clamp-2">
                           {item.title}
                         </p>
@@ -688,7 +759,7 @@ const AdminNewsPage = () => {
                         </p>
                       </td>
 
-                      <td className="p-3 align-top">
+                      <td className="p-3 align-top bg-white">
                         <button
                           onClick={(e) => {
                             e.preventDefault();
@@ -705,7 +776,7 @@ const AdminNewsPage = () => {
                         </button>
                       </td>
 
-                      <td className="p-3 align-top">
+                      <td className="p-3 align-top bg-white">
                         <div className="flex gap-2">
                           <button
                             onClick={() => openEdit(item)}
@@ -730,7 +801,7 @@ const AdminNewsPage = () => {
                 <tr>
                   <td
                     colSpan="4"
-                    className="p-10 text-center text-gray-500 text-sm"
+                    className="p-10 text-center text-gray-500 text-sm bg-white"
                   >
                     Chưa có tin tức nào.
                   </td>
@@ -741,7 +812,7 @@ const AdminNewsPage = () => {
                 <tr>
                   <td
                     colSpan="4"
-                    className="p-8 text-center text-gray-600 text-sm"
+                    className="p-8 text-center text-gray-600 text-sm bg-white"
                   >
                     Đang tải tin tức...
                   </td>
@@ -749,7 +820,7 @@ const AdminNewsPage = () => {
               )}
             </tbody>
           </table>
-        </div>
+        </section>
       </main>
     </div>
   );
