@@ -1,6 +1,16 @@
 import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import useAuth from "../../hooks/useAuth";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 
 const API_BASE = "http://localhost:5000";
 
@@ -29,7 +39,7 @@ const AdminDashboard = () => {
   const [toast, setToast] = useState({ message: "", type: "success" });
   const [error, setError] = useState("");
 
-  // NEW: auto refresh & filters
+  // auto refresh & filters
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [activityFilter, setActivityFilter] = useState("all"); // all | rental | invoice | other
   const [revenueRange, setRevenueRange] = useState(6); // 3 | 6 | 12 tháng gần nhất
@@ -61,7 +71,7 @@ const AdminDashboard = () => {
     if (token) fetchStats();
   }, [token]);
 
-  // NEW: Auto refresh mỗi 5 phút (có thể tắt)
+  // Auto refresh mỗi 5 phút (có thể tắt)
   useEffect(() => {
     if (!autoRefresh || !token) return;
 
@@ -100,7 +110,7 @@ const AdminDashboard = () => {
       ? Math.round((rentedRentals / totalRentals) * 100)
       : 0;
 
-    // NEW: tính tăng trưởng doanh thu nếu có previousMonth
+    // tính tăng trưởng doanh thu nếu có previousMonth
     let revenueGrowth = null;
     let revenueGrowthLabel = "";
     if (
@@ -114,7 +124,9 @@ const AdminDashboard = () => {
           100
       );
       revenueGrowthLabel =
-        revenueGrowth >= 0 ? `↑ +${revenueGrowth}% so với tháng trước` : `↓ ${revenueGrowth}% so với tháng trước`;
+        revenueGrowth >= 0
+          ? `↑ +${revenueGrowth}% so với tháng trước`
+          : `↓ ${revenueGrowth}% so với tháng trước`;
     }
 
     return {
@@ -131,7 +143,7 @@ const AdminDashboard = () => {
     };
   }, [stats]);
 
-  // NEW: lọc hoạt động gần đây theo type
+  // lọc hoạt động gần đây theo type
   const filteredRecent = useMemo(() => {
     if (!stats?.recent) return [];
     if (activityFilter === "all") return stats.recent;
@@ -145,11 +157,13 @@ const AdminDashboard = () => {
     return stats.recent.filter((i) => i.type === activityFilter);
   }, [stats, activityFilter]);
 
-  // NEW: cắt dữ liệu doanh thu theo range (client-side)
+  // cắt dữ liệu doanh thu theo range (client-side)
   const revenueData = useMemo(() => {
     const arr = stats?.revenue?.monthlyRevenue || [];
-    if (arr.length <= revenueRange) return arr;
-    return arr.slice(arr.length - revenueRange); // lấy N tháng gần nhất
+    if (!arr.length) return [];
+    // luôn lấy N tháng gần nhất, dù mảng ngắn hay dài
+    const start = Math.max(0, arr.length - revenueRange);
+    return arr.slice(start);
   }, [stats, revenueRange]);
 
   if (!user || user.role !== "admin") {
@@ -261,9 +275,7 @@ const AdminDashboard = () => {
         </section>
 
         {/* LOADING / ERROR */}
-        {loading && (
-          <SkeletonDashboard />
-        )}
+        {loading && <SkeletonDashboard />}
 
         {!loading && error && !stats && (
           <div className="bg-white rounded-2xl border border-red-100 shadow-md p-6 text-center text-sm">
@@ -363,7 +375,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* CHART DOANH THU 6 THÁNG (nâng cấp) */}
+              {/* CHART DOANH THU */}
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 text-sm lg:col-span-2">
                 <div className="flex items-center justify-between mb-2 gap-2">
                   <h3 className="font-semibold text-gray-800">
@@ -405,7 +417,7 @@ const AdminDashboard = () => {
 
             {/* HÀNG 3: ĐƠN THUÊ + HOẠT ĐỘNG GẦN ĐÂY */}
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              {/* RENTAL STATUS DETAIL + “FUNNEL” */}
+              {/* RENTAL STATUS DETAIL */}
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 text-sm">
                 <h3 className="font-semibold text-gray-800 mb-3">
                   Trạng thái đơn thuê
@@ -461,7 +473,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* HOẠT ĐỘNG GẦN ĐÂY + FILTER */}
+              {/* HOẠT ĐỘNG GẦN ĐÂY */}
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 text-sm">
                 <div className="flex items-center justify-between mb-3 gap-2">
                   <h3 className="font-semibold text-gray-800">
@@ -577,7 +589,7 @@ const StatusRow = ({ label, value, color }) => (
   </li>
 );
 
-/* NEW: Filter chip cho hoạt động gần đây */
+/* Filter chip cho hoạt động gần đây */
 const FilterChip = ({ label, active, onClick }) => (
   <button
     onClick={onClick}
@@ -636,39 +648,70 @@ const ProgressBar = ({ value, color = "emerald" }) => {
   );
 };
 
-/* Biểu đồ cột doanh thu (CSS thuần) */
+/* Biểu đồ cột doanh thu dùng Recharts (mỗi tháng 1 màu, Y không bị cắt) */
 const RevenueBarChart = ({ data }) => {
   if (!data || data.length === 0) return null;
 
-  const max = Math.max(...data.map((x) => x.total || 0)) || 1;
+  const chartData = data.map((m) => ({
+    name: `T${m.month}`, // label trục X
+    total: m.total, // giá trị cột
+    fullLabel: `Tháng ${m.month}/${m.year}`,
+  }));
+
+  const COLORS = [
+    "#22c55e",
+    "#0ea5e9",
+    "#f97316",
+    "#a855f7",
+    "#e11d48",
+    "#14b8a6",
+  ];
 
   return (
-    <div className="flex items-end gap-3 h-full">
-      {data.map((m) => {
-        const height = (m.total / max) * 100;
-        return (
-          <div
-            key={`${m.year}-${m.month}`}
-            className="flex-1 flex flex-col items-center justify-end gap-1"
-          >
-            <div className="flex-1 flex items-end w-full">
-              <div
-                className="w-full rounded-t-xl bg-gradient-to-t from-emerald-500 to-emerald-400 shadow-sm"
-                style={{ height: `${height}%` }}
-                title={`T${m.month}/${m.year} - ${m.total.toLocaleString()} đ`}
-              />
-            </div>
-            <div className="text-[11px] text-gray-500 text-center">
-              T{m.month}
-            </div>
-          </div>
-        );
-      })}
-    </div>
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart
+        data={chartData}
+        barSize={32}
+        margin={{ top: 10, right: 10, left: 40, bottom: 0 }} // left 40 để không cắt chữ
+      >
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+        <XAxis
+          dataKey="name"
+          tick={{ fontSize: 11, fill: "#6b7280" }}
+          axisLine={{ stroke: "#e5e7eb" }}
+          tickLine={false}
+        />
+        <YAxis
+          tick={{ fontSize: 11, fill: "#6b7280" }}
+          tickFormatter={(v) => v.toLocaleString("vi-VN")}
+          axisLine={{ stroke: "#e5e7eb" }}
+          tickLine={false}
+        />
+        <Tooltip
+          contentStyle={{
+            fontSize: 12,
+            borderRadius: 12,
+            borderColor: "#e5e7eb",
+          }}
+          formatter={(value) => `${Number(value).toLocaleString("vi-VN")} đ`}
+          labelFormatter={(_, payload) =>
+            payload?.[0]?.payload?.fullLabel || ""
+          }
+        />
+        <Bar dataKey="total" radius={[10, 10, 0, 0]}>
+          {chartData.map((entry, index) => (
+            <Cell
+              key={entry.name}
+              fill={COLORS[index % COLORS.length]} // mỗi tháng 1 màu
+            />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
   );
 };
 
-/* NEW: Skeleton loading cho dashboard */
+/* Skeleton loading cho dashboard */
 const SkeletonDashboard = () => (
   <div className="space-y-5 animate-pulse">
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

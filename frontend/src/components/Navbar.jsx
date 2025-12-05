@@ -21,7 +21,7 @@ import {
   ClipboardDocumentListIcon,
   ReceiptPercentIcon,
   StarIcon,
-  ChartBarIcon, // ⬅ THÊM ICON DASHBOARD
+  ChartBarIcon,
 } from "@heroicons/react/24/outline";
 
 const Navbar = () => {
@@ -117,18 +117,14 @@ const Navbar = () => {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // ============================
   // UNREAD NEWS
   // ============================
   const unreadCount = useMemo(
-    () =>
-      news.filter(
-        (n) => new Date(n.createdAt).getTime() > lastSeen
-      ).length,
+    () => news.filter((n) => new Date(n.createdAt).getTime() > lastSeen).length,
     [news, lastSeen]
   );
 
@@ -151,12 +147,12 @@ const Navbar = () => {
   };
 
   const navLinkBase =
-    "relative text-sm font-semibold flex items-center gap-1 transition-colors";
+    "relative inline-flex items-center gap-1.5 text-[0.92rem] font-medium tracking-wide px-3 py-2 rounded-full transition-all duration-200";
   const navLinkClass = (path) =>
     `${navLinkBase} ${
       isActive(path)
-        ? "text-green-700 after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-full after:h-[2px] after:bg-green-700"
-        : "text-gray-700 hover:text-green-700"
+        ? "text-emerald-800 bg-emerald-50 shadow-sm"
+        : "text-slate-600 hover:text-emerald-700 hover:bg-slate-50"
     }`;
 
   const badgeClass =
@@ -168,35 +164,41 @@ const Navbar = () => {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 
-        ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           isScrolled
-            ? "backdrop-blur-xl bg-white/90 shadow-lg border-b border-gray-100"
-            : "backdrop-blur-sm bg-white/70 shadow-md border-b border-transparent"
+            ? "backdrop-blur-xl bg-white/95 shadow-lg border-b border-slate-100"
+            : "backdrop-blur-md bg-gradient-to-b from-white/95 via-white/80 to-transparent border-b border-transparent"
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-16 sm:h-20">
             {/* LOGO */}
             <Link
               to="/"
-              className="flex items-center gap-2 flex-shrink-0 group"
+              className="flex items-center gap-3 flex-shrink-0 group"
             >
-              <div className="w-9 h-9 rounded-2xl bg-green-700 flex items-center justify-center text-white font-bold shadow-md group-hover:shadow-lg transition">
-                SB
-              </div>
+              <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br  flex items-center justify-center shadow-lg shadow-emerald-500/20 overflow-hidden">
+  <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_0_0,white,transparent_55%)]" />
+  <img
+    src="/logo.png"             // lấy từ thư mục public
+    alt="SmartBuilding logo"
+    className="relative z-10 w-full h-full object-contain"
+  />
+</div>
+
+
               <div className="flex flex-col">
-                <span className="text-lg sm:text-xl font-bold text-green-700 leading-none">
+                <span className="text-base sm:text-xl font-extrabold text-slate-900 leading-tight tracking-tight group-hover:text-emerald-700 transition-colors">
                   SMARTBUILDING
                 </span>
-                <span className="text-[10px] text-gray-500 uppercase tracking-[0.2em]">
+                <span className="text-[10px] sm:text-[11px] text-slate-500 uppercase tracking-[0.28em]">
                   Resident Portal
                 </span>
               </div>
             </Link>
 
             {/* DESKTOP MENU */}
-            <div className="hidden md:flex items-center gap-6">
+            <div className="hidden md:flex items-center gap-4 lg:gap-6">
               <Link to="/" className={navLinkClass("/")}>
                 Trang chủ
               </Link>
@@ -213,8 +215,8 @@ const Navbar = () => {
                   onClick={() => setNewsDropdownOpen((prev) => !prev)}
                   className={`${navLinkBase} ${
                     newsDropdownOpen || isActive("/news")
-                      ? "text-green-700"
-                      : "text-gray-700 hover:text-green-700"
+                      ? "text-emerald-800 bg-emerald-50 shadow-sm"
+                      : "text-slate-600 hover:text-emerald-700 hover:bg-slate-50"
                   }`}
                 >
                   <NewspaperIcon className="w-4 h-4" />
@@ -227,13 +229,13 @@ const Navbar = () => {
                 </button>
 
                 {newsDropdownOpen && (
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-80 bg-white rounded-2xl border shadow-2xl p-3 z-50 animate-fadeIn">
+                  <div className="absolute top-full right-0 mt-3 w-80 bg-white rounded-2xl border border-slate-100 shadow-2xl p-3 z-50 animate-fadeIn">
                     <div className="flex items-center justify-between mb-2 px-1">
-                      <h4 className="font-semibold text-gray-800 text-sm">
+                      <h4 className="font-semibold text-slate-900 text-sm">
                         Tin mới nhất
                       </h4>
-                      <div className="flex items-center gap-1 text-xs text-gray-500">
-                        <BellIcon className="w-4 h-4 text-green-600" />
+                      <div className="flex items-center gap-1 text-xs text-slate-500">
+                        <BellIcon className="w-4 h-4 text-emerald-600" />
                         {unreadCount > 0 ? (
                           <span>{unreadCount} tin chưa đọc</span>
                         ) : (
@@ -242,9 +244,9 @@ const Navbar = () => {
                       </div>
                     </div>
 
-                    <div className="max-h-64 overflow-y-auto space-y-1">
+                    <div className="max-h-64 overflow-y-auto space-y-1 custom-scrollbar">
                       {news.length === 0 && (
-                        <p className="text-gray-500 text-sm px-2 py-1">
+                        <p className="text-slate-500 text-sm px-2 py-1">
                           Không có tin tức
                         </p>
                       )}
@@ -252,22 +254,22 @@ const Navbar = () => {
                       {news.map((item) => (
                         <div
                           key={item._id}
-                          className="flex items-start gap-3 p-2 rounded-xl hover:bg-green-50 cursor-pointer transition"
+                          className="flex items-start gap-3 p-2 rounded-xl hover:bg-emerald-50 cursor-pointer transition"
                           onClick={() => openPopupNews(item)}
                         >
                           <div
                             className={`w-2 h-2 mt-1.5 rounded-full flex-shrink-0 ${
                               new Date(item.createdAt).getTime() > lastSeen
                                 ? "bg-red-500"
-                                : "bg-gray-300"
+                                : "bg-slate-300"
                             }`}
                           ></div>
 
                           <div className="flex-1">
-                            <p className="font-medium text-sm line-clamp-1 hover:text-green-700">
+                            <p className="font-medium text-sm line-clamp-1 text-slate-900 hover:text-emerald-700">
                               {item.title}
                             </p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-slate-500">
                               {new Date(
                                 item.createdAt
                               ).toLocaleDateString("vi-VN")}
@@ -279,7 +281,7 @@ const Navbar = () => {
                       {news.length > 0 && (
                         <Link
                           to="/news"
-                          className="block text-xs text-center text-green-700 mt-2 hover:underline"
+                          className="block text-xs text-center text-emerald-700 mt-2 hover:underline"
                           onClick={() => setNewsDropdownOpen(false)}
                         >
                           Xem tất cả tin tức
@@ -313,9 +315,7 @@ const Navbar = () => {
 
                       <Link
                         to="/my-invoices"
-                        className={`${navLinkClass(
-                          "/my-invoices"
-                        )} relative`}
+                        className={`${navLinkClass("/my-invoices")} relative`}
                       >
                         Hóa đơn
                         {unpaidCount > 0 && (
@@ -331,7 +331,7 @@ const Navbar = () => {
             </div>
 
             {/* RIGHT SIDE: AUTH + ADMIN + MOBILE BUTTON */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               {/* ADMIN DROPDOWN (desktop) */}
               {user && user.role === "admin" && (
                 <div
@@ -339,17 +339,15 @@ const Navbar = () => {
                   ref={adminDropdownRef}
                 >
                   <button
-                    onClick={() =>
-                      setAdminDropdownOpen((prev) => !prev)
-                    }
+                    onClick={() => setAdminDropdownOpen((prev) => !prev)}
                     className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-semibold shadow-sm transition-all
                       ${
                         adminDropdownOpen
-                          ? "border-green-700 bg-green-700 text-white shadow-md"
-                          : "border-green-600 bg-white text-green-700 hover:bg-green-50"
+                          ? "border-emerald-700 bg-emerald-700 text-white shadow-md"
+                          : "border-emerald-600 bg-white text-emerald-700 hover:bg-emerald-50"
                       }`}
                   >
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-600 text-white">
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-600 text-white">
                       <Cog8ToothIcon className="w-3.5 h-3.5" />
                     </span>
                     <span>Quản trị</span>
@@ -363,12 +361,12 @@ const Navbar = () => {
                   </button>
 
                   {adminDropdownOpen && (
-                    <div className="absolute right-0 mt-3 w-[320px] bg-white/95 backdrop-blur-xl border border-gray-100 rounded-2xl shadow-2xl p-3 z-50 animate-fadeIn">
-                      <div className="px-2 pb-2 border-b border-gray-100 mb-2">
-                        <p className="text-[11px] uppercase tracking-[0.18em] text-gray-400 mb-1">
+                    <div className="absolute right-0 mt-3 w-[320px] bg-white/95 backdrop-blur-xl border border-slate-100 rounded-2xl shadow-2xl p-3 z-50 animate-fadeIn">
+                      <div className="px-2 pb-2 border-b border-slate-100 mb-2">
+                        <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400 mb-1">
                           Bảng điều khiển quản trị
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-slate-500">
                           Quản lý toàn bộ hoạt động của tòa nhà trong một nơi.
                         </p>
                       </div>
@@ -377,17 +375,17 @@ const Navbar = () => {
                         {/* DASHBOARD – TỔNG QUAN */}
                         <Link
                           to="/admin/dashboard"
-                          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-green-50 transition cursor-pointer"
+                          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-50 transition cursor-pointer"
                           onClick={() => setAdminDropdownOpen(false)}
                         >
                           <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center text-slate-700 border border-slate-100">
                             <ChartBarIcon className="w-5 h-5" />
                           </div>
                           <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-900">
+                            <p className="text-sm font-semibold text-slate-900">
                               Dashboard tổng quan
                             </p>
-                            <p className="text-[11px] text-gray-500">
+                            <p className="text-[11px] text-slate-500">
                               Thống kê nhanh hợp đồng, hóa đơn, cư dân, doanh
                               thu.
                             </p>
@@ -396,17 +394,17 @@ const Navbar = () => {
 
                         <Link
                           to="/admin/apartments"
-                          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-green-50 transition cursor-pointer"
+                          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-50 transition cursor-pointer"
                           onClick={() => setAdminDropdownOpen(false)}
                         >
                           <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-700 border border-emerald-100">
                             <BuildingOffice2Icon className="w-5 h-5" />
                           </div>
                           <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-900">
+                            <p className="text-sm font-semibold text-slate-900">
                               Căn hộ
                             </p>
-                            <p className="text-[11px] text-gray-500">
+                            <p className="text-[11px] text-slate-500">
                               Thêm, sửa, bật / tắt và quản lý danh mục căn hộ.
                             </p>
                           </div>
@@ -414,17 +412,17 @@ const Navbar = () => {
 
                         <Link
                           to="/admin/rentals"
-                          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-green-50 transition cursor-pointer"
+                          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-50 transition cursor-pointer"
                           onClick={() => setAdminDropdownOpen(false)}
                         >
                           <div className="w-9 h-9 rounded-xl bg-sky-50 flex items-center justify-center text-sky-700 border border-sky-100">
                             <ClipboardDocumentListIcon className="w-5 h-5" />
                           </div>
                           <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-900">
+                            <p className="text-sm font-semibold text-slate-900">
                               Hợp đồng
                             </p>
-                            <p className="text-[11px] text-gray-500">
+                            <p className="text-[11px] text-slate-500">
                               Duyệt, theo dõi trạng thái và xử lý yêu cầu hủy.
                             </p>
                           </div>
@@ -432,17 +430,17 @@ const Navbar = () => {
 
                         <Link
                           to="/admin/invoices"
-                          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-green-50 transition cursor-pointer"
+                          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-50 transition cursor-pointer"
                           onClick={() => setAdminDropdownOpen(false)}
                         >
                           <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-700 border border-amber-100">
                             <ReceiptPercentIcon className="w-5 h-5" />
                           </div>
                           <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-900">
+                            <p className="text-sm font-semibold text-slate-900">
                               Hóa đơn
                             </p>
-                            <p className="text-[11px] text-gray-500">
+                            <p className="text-[11px] text-slate-500">
                               Lập, theo dõi và quản lý thanh toán của cư dân.
                             </p>
                           </div>
@@ -450,17 +448,17 @@ const Navbar = () => {
 
                         <Link
                           to="/admin/news"
-                          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-green-50 transition cursor-pointer"
+                          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-50 transition cursor-pointer"
                           onClick={() => setAdminDropdownOpen(false)}
                         >
                           <div className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-700 border border-indigo-100">
                             <NewspaperIcon className="w-5 h-5" />
                           </div>
                           <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-900">
+                            <p className="text-sm font-semibold text-slate-900">
                               Tin tức
                             </p>
-                            <p className="text-[11px] text-gray-500">
+                            <p className="text-[11px] text-slate-500">
                               Đăng thông báo, bản tin và cập nhật cho cư dân.
                             </p>
                           </div>
@@ -468,17 +466,17 @@ const Navbar = () => {
 
                         <Link
                           to="/admin/reviews"
-                          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-green-50 transition cursor-pointer"
+                          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-50 transition cursor-pointer"
                           onClick={() => setAdminDropdownOpen(false)}
                         >
                           <div className="w-9 h-9 rounded-xl bg-pink-50 flex items-center justify-center text-pink-700 border border-pink-100">
                             <StarIcon className="w-5 h-5" />
                           </div>
                           <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-900">
+                            <p className="text-sm font-semibold text-slate-900">
                               Đánh giá
                             </p>
-                            <p className="text-[11px] text-gray-500">
+                            <p className="text-[11px] text-slate-500">
                               Xem và xử lý đánh giá, góp ý từ cư dân.
                             </p>
                           </div>
@@ -493,11 +491,9 @@ const Navbar = () => {
               <div className="hidden md:flex items-center gap-3">
                 {user ? (
                   <>
-                    <div className="flex items-center gap-2 text-sm text-gray-700">
-                      <UserCircleIcon className="w-6 h-6 text-green-700" />
-                      <span className="font-medium max-w-[140px] truncate">
-                        {user.name}
-                      </span>
+                    <div className="flex items-center gap-2 text-sm text-slate-700 max-w-[160px]">
+                      <UserCircleIcon className="w-6 h-6 text-emerald-700" />
+                      <span className="font-medium truncate">{user.name}</span>
                     </div>
                     <button
                       onClick={logout}
@@ -510,13 +506,13 @@ const Navbar = () => {
                   <>
                     <Link
                       to="/login"
-                      className="text-sm font-semibold text-gray-700 hover:text-green-700"
+                      className="text-sm font-semibold text-slate-700 hover:text-emerald-700"
                     >
                       Đăng nhập
                     </Link>
                     <Link
                       to="/register"
-                      className="px-5 py-2 rounded-full bg-green-700 text-white text-sm font-semibold shadow hover:bg-green-800"
+                      className="px-4 py-2 rounded-full bg-gradient-to-r from-emerald-600 to-green-600 text-white text-sm font-semibold shadow-md hover:from-emerald-700 hover:to-green-700"
                     >
                       Đăng ký
                     </Link>
@@ -526,14 +522,14 @@ const Navbar = () => {
 
               {/* MOBILE MENU BUTTON */}
               <button
-                className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-full border border-gray-300 bg-white/80 shadow-sm"
+                className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-full border border-slate-200 bg-white/90 shadow-sm"
                 onClick={() => setMobileOpen((prev) => !prev)}
                 aria-label="Toggle navigation"
               >
                 {mobileOpen ? (
-                  <XMarkIcon className="w-5 h-5 text-gray-700" />
+                  <XMarkIcon className="w-5 h-5 text-slate-700" />
                 ) : (
-                  <Bars3Icon className="w-5 h-5 text-gray-700" />
+                  <Bars3Icon className="w-5 h-5 text-slate-700" />
                 )}
               </button>
             </div>
@@ -542,8 +538,8 @@ const Navbar = () => {
 
         {/* MOBILE MENU */}
         {mobileOpen && (
-          <div className="md:hidden border-t border-gray-100 bg-white/95 backdrop-blur-xl shadow-xl animate-fadeIn">
-            <div className="max-w-7xl mx-auto px-4 py-3 space-y-2 text-sm">
+          <div className="md:hidden border-t border-slate-100 bg-white/95 backdrop-blur-xl shadow-xl animate-fadeIn">
+            <div className="max-w-7xl mx-auto px-4 py-3 space-y-3 text-sm">
               <div className="flex flex-col gap-1">
                 <Link
                   to="/"
@@ -595,9 +591,7 @@ const Navbar = () => {
                         <Link
                           to="/my-rentals"
                           onClick={() => setMobileOpen(false)}
-                          className={`${navLinkClass(
-                            "/my-rentals"
-                          )} relative`}
+                          className={`${navLinkClass("/my-rentals")} relative`}
                         >
                           Hợp đồng
                           {approvedCount > 0 && (
@@ -610,9 +604,7 @@ const Navbar = () => {
                         <Link
                           to="/my-invoices"
                           onClick={() => setMobileOpen(false)}
-                          className={`${navLinkClass(
-                            "/my-invoices"
-                          )} relative`}
+                          className={`${navLinkClass("/my-invoices")} relative`}
                         >
                           Hóa đơn
                           {unpaidCount > 0 && (
@@ -625,17 +617,16 @@ const Navbar = () => {
                     )}
 
                     {user.role === "admin" && (
-                      <div className="mt-2 border-t border-gray-100 pt-3">
-                        <p className="text-[11px] uppercase text-gray-400 tracking-[0.15em] mb-2 flex items-center gap-1">
-                          <Cog8ToothIcon className="w-4 h-4 text-green-700" />
+                      <div className="mt-3 border-t border-slate-100 pt-3">
+                        <p className="text-[11px] uppercase text-slate-400 tracking-[0.15em] mb-2 flex items-center gap-1">
+                          <Cog8ToothIcon className="w-4 h-4 text-emerald-700" />
                           Quản trị hệ thống
                         </p>
 
-                        {/* DASHBOARD MOBILE */}
                         <Link
                           to="/admin/dashboard"
                           onClick={() => setMobileOpen(false)}
-                          className="flex items-center gap-2 py-1.5 text-gray-700 hover:text-green-700"
+                          className="flex items-center gap-2 py-1.5 text-slate-700 hover:text-emerald-700"
                         >
                           <span className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center text-slate-700 border border-slate-100">
                             <ChartBarIcon className="w-4 h-4" />
@@ -646,7 +637,7 @@ const Navbar = () => {
                         <Link
                           to="/admin/apartments"
                           onClick={() => setMobileOpen(false)}
-                          className="flex items-center gap-2 py-1.5 text-gray-700 hover:text-green-700"
+                          className="flex items-center gap-2 py-1.5 text-slate-700 hover:text-emerald-700"
                         >
                           <span className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-700 border border-emerald-100">
                             <BuildingOffice2Icon className="w-4 h-4" />
@@ -657,7 +648,7 @@ const Navbar = () => {
                         <Link
                           to="/admin/rentals"
                           onClick={() => setMobileOpen(false)}
-                          className="flex items-center gap-2 py-1.5 text-gray-700 hover:text-green-700"
+                          className="flex items-center gap-2 py-1.5 text-slate-700 hover:text-emerald-700"
                         >
                           <span className="w-7 h-7 rounded-lg bg-sky-50 flex items-center justify-center text-sky-700 border border-sky-100">
                             <ClipboardDocumentListIcon className="w-4 h-4" />
@@ -668,7 +659,7 @@ const Navbar = () => {
                         <Link
                           to="/admin/invoices"
                           onClick={() => setMobileOpen(false)}
-                          className="flex items-center gap-2 py-1.5 text-gray-700 hover:text-green-700"
+                          className="flex items-center gap-2 py-1.5 text-slate-700 hover:text-emerald-700"
                         >
                           <span className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center text-amber-700 border border-amber-100">
                             <ReceiptPercentIcon className="w-4 h-4" />
@@ -679,7 +670,7 @@ const Navbar = () => {
                         <Link
                           to="/admin/news"
                           onClick={() => setMobileOpen(false)}
-                          className="flex items-center gap-2 py-1.5 text-gray-700 hover:text-green-700"
+                          className="flex items-center gap-2 py-1.5 text-slate-700 hover:text-emerald-700"
                         >
                           <span className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-700 border border-indigo-100">
                             <NewspaperIcon className="w-4 h-4" />
@@ -690,7 +681,7 @@ const Navbar = () => {
                         <Link
                           to="/admin/reviews"
                           onClick={() => setMobileOpen(false)}
-                          className="flex items-center gap-2 py-1.5 text-gray-700 hover:text-green-700"
+                          className="flex items-center gap-2 py-1.5 text-slate-700 hover:text-emerald-700"
                         >
                           <span className="w-7 h-7 rounded-lg bg-pink-50 flex items-center justify-center text-pink-700 border border-pink-100">
                             <StarIcon className="w-4 h-4" />
@@ -703,11 +694,11 @@ const Navbar = () => {
                 )}
               </div>
 
-              <div className="border-t border-gray-100 pt-3 mt-2 flex items-center justify-between">
+              <div className="border-t border-slate-100 pt-3 mt-2 flex items-center justify-between">
                 {user ? (
                   <>
-                    <div className="flex items-center gap-2 text-xs text-gray-700">
-                      <UserCircleIcon className="w-5 h-5 text-green-700" />
+                    <div className="flex items-center gap-2 text-xs text-slate-700">
+                      <UserCircleIcon className="w-5 h-5 text-emerald-700" />
                       <span className="max-w-[140px] truncate">
                         {user.name}
                       </span>
@@ -727,14 +718,14 @@ const Navbar = () => {
                     <Link
                       to="/login"
                       onClick={() => setMobileOpen(false)}
-                      className="text-sm font-semibold text-gray-700 hover:text-green-700"
+                      className="text-sm font-semibold text-slate-700 hover:text-emerald-700"
                     >
                       Đăng nhập
                     </Link>
                     <Link
                       to="/register"
                       onClick={() => setMobileOpen(false)}
-                      className="px-4 py-2 rounded-full bg-green-700 text-white text-xs font-semibold shadow hover:bg-green-800"
+                      className="px-4 py-2 rounded-full bg-gradient-to-r from-emerald-600 to-green-600 text-white text-xs font-semibold shadow hover:from-emerald-700 hover:to-green-700"
                     >
                       Đăng ký
                     </Link>

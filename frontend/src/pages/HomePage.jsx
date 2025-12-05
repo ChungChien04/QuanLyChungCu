@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
+import BuildingMap from "../components/BuildingMap";
 
 const API_BASE = "http://localhost:5000";
 
@@ -239,6 +240,18 @@ const HomePage = () => {
               </div>
             </div>
           </div>
+          <section className="bg-white/70 border-t border-emerald-100 py-10">
+  <div className="max-w-7xl mx-auto px-6">
+    <h3 className="text-2xl font-bold text-emerald-800 mb-4">
+      Vị trí tòa nhà SMARTBUILDING
+    </h3>
+
+    <div className="w-full h-[320px] rounded-2xl overflow-hidden shadow-lg border border-emerald-100">
+      <BuildingMap />
+    </div>
+  </div>
+</section>
+
         </>
       )}
     </div>

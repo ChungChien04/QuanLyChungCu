@@ -67,10 +67,14 @@ router.get("/stats", requireAuth, requireAdmin, async (req, res) => {
       prevYear = curYear - 1;
     }
 
-    // ⚡ Chỉ lấy hóa đơn đã thanh toán
-    const paidInvoices = invoices.filter((inv) => inv.status === "paid");
+    // ⚡ TÍNH DOANH THU TỪ TẤT CẢ HÓA ĐƠN KHÔNG BỊ HỦY
+    // (unpaid + paid). Sau này nếu bạn muốn chỉ tính tiền đã thu,
+    // đổi lại thành: inv.status === "paid"
+    const revenueInvoices = invoices.filter(
+      (inv) => inv.status !== "cancelled"
+    );
 
-    const invoicesCurrentMonth = paidInvoices.filter(
+    const invoicesCurrentMonth = revenueInvoices.filter(
       (inv) => inv.month === curMonth && inv.year === curYear
     );
 
@@ -79,7 +83,7 @@ router.get("/stats", requireAuth, requireAdmin, async (req, res) => {
       0
     );
 
-    const invoicesPrevMonth = paidInvoices.filter(
+    const invoicesPrevMonth = revenueInvoices.filter(
       (inv) => inv.month === prevMonth && inv.year === prevYear
     );
 
@@ -97,29 +101,35 @@ router.get("/stats", requireAuth, requireAdmin, async (req, res) => {
     }
 
     // -----------------------------
-    // 3. Doanh thu 6 tháng gần nhất
+    // 3. Doanh thu 6 tháng gần nhất (dùng invoice không bị hủy)
     // -----------------------------
-    const monthlyRevenueMap = {};
+    // -----------------------------
+// 3. Doanh thu 12 tháng gần nhất (dùng invoice không bị hủy)
+// -----------------------------
+const monthlyRevenueMap = {};
 
-    paidInvoices.forEach((inv) => {
-      if (!inv.month || !inv.year) return;
+revenueInvoices.forEach((inv) => {
+  if (!inv.month || !inv.year) return;
 
-      const key = `${inv.year}-${String(inv.month).padStart(2, "0")}`;
-      monthlyRevenueMap[key] =
-        (monthlyRevenueMap[key] || 0) + (inv.totalAmount || 0);
-    });
+  const key = `${inv.year}-${String(inv.month).padStart(2, "0")}`;
+  monthlyRevenueMap[key] =
+    (monthlyRevenueMap[key] || 0) + (inv.totalAmount || 0);
+});
 
-    const allKeys = Object.keys(monthlyRevenueMap).sort();
-    const lastSixKeys = allKeys.slice(-6);
+// Tạo đủ 12 tháng gần nhất (kể cả tháng không có hóa đơn)
+const monthlyRevenue = [];
+for (let i = 11; i >= 0; i--) {
+  const d = new Date(curYear, curMonth - 1 - i, 1); // lùi i tháng
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  const key = `${year}-${String(month).padStart(2, "0")}`;
 
-    const monthlyRevenue = lastSixKeys.map((key) => {
-      const [year, month] = key.split("-");
-      return {
-        year: Number(year),
-        month: Number(month),
-        total: monthlyRevenueMap[key],
-      };
-    });
+  monthlyRevenue.push({
+    year,
+    month,
+    total: monthlyRevenueMap[key] || 0, // nếu không có hóa đơn, xem như 0
+  });
+}
 
     // -----------------------------
     // 4. Hoạt động gần đây

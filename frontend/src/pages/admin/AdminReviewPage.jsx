@@ -153,79 +153,24 @@ const AdminReviewPage = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* TOP BAR */}
-      <header className="fixed inset-x-0 top-0 z-30 bg-white/80 backdrop-blur border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className="text-[11px] uppercase tracking-[0.2em] text-emerald-500 font-semibold">
-              Admin · Reviews
-            </span>
-            <div className="flex items-center gap-2 mt-0.5">
-              <h1 className="text-base md:text-lg font-semibold text-slate-900">
-                Quản lý đánh giá khách hàng
-              </h1>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                {totalReviews} đánh giá
-              </span>
-            </div>
-          </div>
-
-          <div className="hidden md:flex items-center gap-3 text-xs text-slate-500">
-            <span className="inline-flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              Online
-            </span>
-            <div className="w-px h-4 bg-slate-200" />
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-slate-700">
-                {user?.name || user?.email}
-              </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 font-semibold">
-                ADMIN
-              </span>
-            </div>
-          </div>
+ {/* HEADER ADMIN – hero giống Hóa đơn */}
+      <section className="bg-gradient-to-b from-emerald-50 to-emerald-100/40 border-b border-emerald-50">
+        <div className="max-w-7xl mx-auto px-6 pt-[96px] pb-6">
+          <p className="text-xs uppercase tracking-[0.22em] text-emerald-500 mb-2">
+            Admin panel
+          </p>
+          <h1 className="text-3xl md:text-4xl font-bold text-emerald-700 mb-1 text-balance">
+            Trung tâm quản lý đánh giá
+          </h1>
+          <p className="text-sm md:text-base text-emerald-900/80 max-w-2xl">
+            Theo dõi và quản lý các đánh giá cho căn hộ, duyệt hiển thị trên website
+      và phản hồi tới khách hàng một cách chuyên nghiệp.
+          </p>
         </div>
-      </header>
+      </section>
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 pt-24 pb-10 space-y-6">
 {/* BREADCRUMB + MÔ TẢ – LÀM NỔI BẬT HƠN */}
-<section className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-sky-50 shadow-sm px-4 py-4 md:px-6 md:py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-  {/* Accent decor */}
-  <div className="pointer-events-none absolute inset-y-0 right-0 w-1/3 opacity-40">
-    <div className="h-full w-full bg-[radial-gradient(circle_at_top,_#22c55e33,_transparent_60%)]" />
-  </div>
-
-  <div className="relative z-10">
-    <nav className="flex items-center gap-1 text-xs text-emerald-600 mb-1">
-      <span className="font-medium">Dashboard</span>
-      <span className="mx-1 text-emerald-300">/</span>
-      <span className="text-emerald-800 font-semibold">
-        Đánh giá khách hàng
-      </span>
-    </nav>
-
-    <h2 className="text-base md:text-lg font-semibold text-slate-900 mb-1.5">
-      Trung tâm quản lý đánh giá
-    </h2>
-
-    <p className="text-xs md:text-sm text-slate-600 max-w-2xl">
-      Theo dõi và quản lý các đánh giá cho căn hộ, duyệt hiển thị trên website
-      và phản hồi tới khách hàng một cách chuyên nghiệp.
-    </p>
-  </div>
-
-  <div className="relative z-10 flex flex-col items-start md:items-end gap-2 text-xs">
-    <span className="inline-flex items-center gap-2 rounded-full bg-white/80 border border-emerald-100 px-3 py-1 shadow-sm">
-      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-      <span className="font-medium text-emerald-700">
-        Trung tâm đánh giá đang hoạt động
-      </span>
-    </span>
-    <span className="text-[11px] text-slate-500">
-      Bạn có thể duyệt, ẩn, xoá và phản hồi đánh giá tại đây.
-    </span>
-  </div>
-</section>
 
 
         {/* CARDS THỐNG KÊ NHANH */}

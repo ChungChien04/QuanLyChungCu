@@ -60,6 +60,7 @@ const AdminInvoiceManagement = () => {
 
   useEffect(() => {
     if (activeTab === "list" && token) fetchInvoices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterMonth, filterYear, filterStatus]);
 
   const fetchSettings = async () => {
@@ -408,24 +409,27 @@ const AdminInvoiceManagement = () => {
                                 : "Chưa trả"}
                             </span>
                           </td>
-                          <td className="p-3">
-                            <div className="flex justify-center gap-2 flex-wrap">
+
+                          {/* HÀNH ĐỘNG – căn thẳng nút */}
+                          <td className="p-3 text-center">
+                            <div className="inline-flex items-center justify-center gap-2">
+                              {/* luôn có 2 “ô” rộng bằng nhau */}
                               <button
                                 onClick={() => setViewingInvoice(inv)}
-                                className="bg-gray-50 text-gray-700 px-3 py-1.5 rounded-xl text-xs border border-gray-200 hover:bg-gray-100"
+                                className="w-28 bg-gray-50 text-gray-700 px-3 py-1.5 rounded-xl text-xs border border-gray-200 hover:bg-gray-100"
                               >
                                 Xem chi tiết
                               </button>
-                              {inv.status === "unpaid" && (
+
+                              {inv.status === "unpaid" ? (
                                 <button
                                   onClick={() => handleManualPay(inv._id)}
-                                  className="bg-emerald-600 text-white px-3 py-1.5 rounded-xl text-xs font-semibold hover:bg-emerald-700 shadow-sm"
+                                  className="w-28 bg-emerald-600 text-white px-3 py-1.5 rounded-xl text-xs font-semibold hover:bg-emerald-700 shadow-sm"
                                 >
                                   Đã thu tiền
                                 </button>
-                              )}
-                              {inv.status === "paid" && (
-                                <span className="text-gray-400 text-xs">
+                              ) : (
+                                <span className="w-28 inline-flex items-center justify-center px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                   Hoàn tất
                                 </span>
                               )}
@@ -486,7 +490,6 @@ const AdminInvoiceManagement = () => {
                       <th className="p-3 bg-emerald-700 border-emerald-600">
                         Khách
                       </th>
-                      {/* Giữ màu xanh dương cho số phí như bạn ghi chú */}
                       <th className="p-3 bg-emerald-700 w-28 border-l border-emerald-600">
                         Phí chung
                       </th>
@@ -606,68 +609,82 @@ const AdminInvoiceManagement = () => {
           </div>
         )}
 
-        {/* === TAB 3: SETTINGS === */}
+        {/* === TAB 3: SETTINGS (NÂNG CẤP UI) === */}
         {activeTab === "settings" && (
-          <div className="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 border-b border-gray-100 pb-2">
-              Cài đặt giá mặc định
-            </h3>
-            <div className="space-y-3 text-sm">
-              <label className="block">
-                <span className="text-gray-700 text-sm">Phí chung</span>
-                <input
-                  type="number"
-                  className="w-full border border-gray-200 p-2 rounded-xl mt-1 text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none"
-                  value={settings.commonFee}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      commonFee: Number(e.target.value),
-                    })
-                  }
-                />
-              </label>
+          <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+            <div className="px-6 pt-6 pb-4 border-b border-gray-100 bg-gradient-to-r from-emerald-50 via-white to-emerald-50">
+              <p className="text-xs uppercase tracking-[0.18em] text-emerald-600 mb-1 font-semibold">
+                Cài đặt hệ thống
+              </p>
+              <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-1">
+                Cài đặt giá mặc định
+              </h3>
+              <p className="text-xs md:text-sm text-gray-600">
+                Thiết lập phí chung, vệ sinh và đơn giá điện kWh. Các hóa đơn mới
+                sẽ tự động áp dụng các giá này.
+              </p>
+            </div>
 
-              <label className="block">
-                <span className="text-gray-700 text-sm">Vệ sinh</span>
-                <input
-                  type="number"
-                  className="w-full border border-gray-200 p-2 rounded-xl mt-1 text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none"
-                  value={settings.cleaningFee}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      cleaningFee: Number(e.target.value),
-                    })
-                  }
-                />
-              </label>
+            <div className="px-6 py-6 space-y-4 text-sm">
+              <div className="grid md:grid-cols-2 gap-4">
+                <label className="block">
+                  <span className="text-gray-700 text-sm">Phí chung</span>
+                  <input
+                    type="number"
+                    className="mt-1 w-full border border-gray-200 p-2.5 rounded-xl text-sm bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none"
+                    value={settings.commonFee}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        commonFee: Number(e.target.value),
+                      })
+                    }
+                  />
+                </label>
 
-              <label className="block">
-                <span className="text-gray-700 text-sm">Giá điện / kW</span>
-                <input
-                  type="number"
-                  className="w-full border border-gray-200 p-2 rounded-xl mt-1 text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none"
-                  value={settings.electricityPrice}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      electricityPrice: Number(e.target.value),
-                    })
-                  }
-                />
-              </label>
+                <label className="block">
+                  <span className="text-gray-700 text-sm">Vệ sinh</span>
+                  <input
+                    type="number"
+                    className="mt-1 w-full border border-gray-200 p-2.5 rounded-xl text-sm bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none"
+                    value={settings.cleaningFee}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        cleaningFee: Number(e.target.value),
+                      })
+                    }
+                  />
+                </label>
+
+                <label className="block md:col-span-2">
+                  <span className="text-gray-700 text-sm">Giá điện / kW</span>
+                  <input
+                    type="number"
+                    className="mt-1 w-full border border-gray-200 p-2.5 rounded-xl text-sm bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none"
+                    value={settings.electricityPrice}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        electricityPrice: Number(e.target.value),
+                      })
+                    }
+                  />
+                  <p className="mt-1 text-[11px] text-gray-500">
+                    Ví dụ: <span className="font-medium">3800</span> đ / kW.
+                  </p>
+                </label>
+              </div>
 
               <button
                 onClick={handleSaveSettings}
-                className="w-full bg-emerald-600 text-white py-2 rounded-xl text-sm font-semibold hover:bg-emerald-700 mt-3 shadow-sm"
+                className="w-full mt-2 bg-emerald-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700 shadow-sm"
               >
                 Lưu cài đặt
               </button>
             </div>
           </div>
         )}
-
         <AdminInvoiceDetailModal
           invoice={viewingInvoice}
           onClose={() => setViewingInvoice(null)}

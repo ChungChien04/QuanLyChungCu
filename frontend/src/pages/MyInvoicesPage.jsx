@@ -3,7 +3,18 @@ import axios from "axios";
 import useAuth from "../hooks/useAuth";
 import InvoiceListModal from "../components/InvoiceListModal";
 
+import {
+  HomeModernIcon,
+  DocumentTextIcon,
+  MapPinIcon,
+  CalendarDaysIcon,
+} from "@heroicons/react/24/outline";
+
 const API_BASE = "http://localhost:5000";
+
+// Helper format ngày
+const formatDate = (d) =>
+  d ? new Date(d).toLocaleDateString("vi-VN") : "--/--/----";
 
 const MyInvoicesPage = () => {
   const { token } = useAuth();
@@ -11,7 +22,7 @@ const MyInvoicesPage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedRental, setSelectedRental] = useState(null);
 
-  // Lấy danh sách các căn đang thuê
+  // Chỉ lấy hợp đồng có status = "rented"
   useEffect(() => {
     const fetchActiveRentals = async () => {
       try {
@@ -21,92 +32,142 @@ const MyInvoicesPage = () => {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-        // Chỉ lấy những căn ĐANG THUÊ (đã trả tiền thuê nhà)
-        const activeOnes = data.filter((r) => r.status === "rented");
-        setRentals(activeOnes);
+        const active = (data || []).filter((r) => r.status === "rented");
+        setRentals(active);
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
+
     if (token) fetchActiveRentals();
   }, [token]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-emerald-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <p className="text-gray-500 text-sm animate-pulse">
-          Đang tải dữ liệu hóa đơn...
+          Đang tải dữ liệu...
         </p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-emerald-50 pb-16">
+    <div className="min-h-screen bg-slate-50 pb-16">
+      {/* BACKGROUND EFFECT */}
+      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.18),transparent_60%),radial-gradient(circle_at_bottom,_rgba(14,165,233,0.15),transparent_65%)]" />
+
       {/* HEADER */}
-      <section className="bg-gradient-to-b from-emerald-50 to-emerald-100/40 border-b border-emerald-50">
-        <div className="max-w-5xl mx-auto px-6 pt-[96px] pb-6">
-          <p className="text-xs uppercase tracking-[0.22em] text-emerald-500 mb-2">
-            Tài khoản của bạn
-          </p>
-          <h1 className="text-3xl md:text-4xl font-bold text-emerald-700 mb-1">
-            Hóa đơn điện & dịch vụ
-          </h1>
-          <p className="text-sm md:text-base text-emerald-900/80 max-w-2xl">
-            Xem chi tiết tiền điện, phí chung, vệ sinh cho các căn hộ bạn đang
-            thuê.
-          </p>
+      <header className="bg-gradient-to-b from-emerald-50 to-emerald-100/40 border-b border-emerald-50">
+  <div className="max-w-6xl mx-auto px-6 pt-[96px] pb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+    
+    {/* LEFT SIDE */}
+    <div>
+      <div className="flex items-center gap-2 mb-2">
+        <div className="h-10 w-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-sm">
+          <HomeModernIcon className="w-6 h-6" />
         </div>
-      </section>
+        <span className="text-[11px] uppercase tracking-[0.22em] text-emerald-600 font-semibold">
+          Tài khoản của bạn
+        </span>
+      </div>
+
+      <h1 className="text-3xl md:text-4xl font-bold text-emerald-700 mb-1">
+        Hóa đơn điện & dịch vụ
+      </h1>
+      <p className="text-emerald-900/80 max-w-2xl text-sm md:text-base">
+        Theo dõi hóa đơn điện, nước, phí dịch vụ và thanh toán nhanh cho từng căn hộ bạn đang thuê.
+      </p>
+    </div>
+
+    {/* RIGHT SIDE BADGE */}
+    {rentals.length > 0 && (
+      <div className="mt-2 md:mt-0">
+        <div className="inline-flex flex-col items-end bg-white border border-emerald-100 text-emerald-700 px-4 py-2 rounded-2xl shadow-sm">
+          <span className="text-[11px] uppercase tracking-wide text-emerald-600">
+            Tổng số căn đang thuê
+          </span>
+          <span className="text-lg font-bold">
+            {rentals.length} căn hộ
+          </span>
+        </div>
+      </div>
+    )}
+
+  </div>
+</header>
+
 
       {/* CONTENT */}
-      <main className="max-w-5xl mx-auto px-6 pt-6">
+      <main className="max-w-6xl mx-auto px-6 pt-6">
+        {/* Không có căn đang thuê */}
         {rentals.length === 0 ? (
-          <div className="bg-white/80 backdrop-blur-sm p-10 rounded-2xl border border-dashed border-emerald-200 text-center shadow-sm mt-4">
-            <p className="text-gray-700 font-medium mb-1">
-              Bạn chưa có căn hộ nào đang thuê.
+          <div className="bg-white/90 backdrop-blur-sm p-10 rounded-2xl border border-dashed border-emerald-300 text-center shadow-sm mt-6">
+            <p className="text-slate-800 font-semibold mb-1">
+              Hiện không có căn hộ nào đang thuê
             </p>
-            <p className="text-gray-500 text-sm">
-              Khi hợp đồng chuyển sang trạng thái{" "}
+            <p className="text-slate-500 text-sm">
+              Khi hợp đồng của bạn chuyển sang trạng thái{" "}
               <span className="font-semibold text-emerald-700">Đang thuê</span>,
-              các hóa đơn sẽ xuất hiện tại đây.
+              hóa đơn sẽ xuất hiện tại đây.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
             {rentals.map((r) => (
               <div
                 key={r._id}
-                className="bg-white border border-gray-200 rounded-2xl shadow-md hover:shadow-lg transition-shadow p-6 relative overflow-hidden"
+                className="relative bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg transition-all p-6 overflow-hidden"
               >
                 {/* Badge trạng thái */}
-                <div className="absolute top-0 right-0 bg-emerald-600 text-white px-3 py-1 rounded-bl-2xl text-[11px] font-semibold uppercase tracking-wide shadow-sm">
-                  Đang ở
+                <div className="absolute top-0 right-0 bg-emerald-600 text-white px-4 py-1 text-[11px] rounded-bl-2xl uppercase tracking-wide shadow-sm">
+                  Đang thuê
                 </div>
 
-                <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-1 pr-16">
+                {/* Tên căn hộ */}
+                <h2 className="text-xl font-semibold text-slate-900 mb-1 flex items-center gap-2 pr-14">
+                  <DocumentTextIcon className="w-5 h-5 text-emerald-600" />
                   {r.apartment?.title || "Căn hộ"}
                 </h2>
-                <p className="text-gray-500 text-xs md:text-sm mb-4">
-                  {r.apartment?.location?.address || "Chưa cập nhật địa chỉ"}
+
+                {/* Địa chỉ */}
+                <p className="text-slate-500 text-sm flex items-center gap-1">
+                  <MapPinIcon className="w-4 h-4 text-slate-400" />
+                  {r.apartment?.location?.address || "Không có địa chỉ"}
                 </p>
 
-                <div className="flex items-center justify-between mt-3 pt-4 border-t border-gray-100 text-xs md:text-sm">
-                  <div className="text-gray-600">
-                    Hợp đồng:{" "}
-                    <span className="font-semibold text-gray-900">
+                {/* Thông tin hợp đồng */}
+                <div className="mt-4 pt-4 border-t border-slate-100 text-sm space-y-2">
+                  <p>
+                    Mã hợp đồng:{" "}
+                    <span className="font-semibold text-slate-900">
                       #{r._id.slice(-6)}
                     </span>
-                  </div>
+                  </p>
+
+                  <p className="flex items-center gap-2">
+                    <CalendarDaysIcon className="w-5 h-5 text-slate-400" />
+                    Thời gian ở:{" "}
+                    <span className="font-medium text-slate-800">
+                      {formatDate(r.startDate)} – {formatDate(r.endDate)}
+                    </span>
+                  </p>
+                </div>
+
+                {/* Action */}
+                <div className="mt-5 flex justify-between items-center border-t pt-4 border-slate-100">
+                  <p className="text-xs text-slate-500 max-w-[60%]">
+                    Xem hóa đơn điện, nước và phí dịch vụ của căn hộ này.
+                  </p>
 
                   <button
                     onClick={() => setSelectedRental(r)}
-                    className="bg-emerald-600 text-white px-4 py-2 rounded-xl hover:bg-emerald-700 transition text-xs md:text-sm shadow-sm font-medium flex items-center gap-2"
+                    className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-medium shadow hover:bg-emerald-700 transition flex items-center gap-2"
                   >
-                    <span>📄</span>
-                    <span>Xem hóa đơn</span>
+                    <DocumentTextIcon className="w-4 h-4" />
+                    Xem hóa đơn
                   </button>
                 </div>
               </div>
@@ -115,7 +176,7 @@ const MyInvoicesPage = () => {
         )}
       </main>
 
-      {/* Modal Hóa Đơn */}
+      {/* Modal danh sách hóa đơn */}
       <InvoiceListModal
         isOpen={!!selectedRental}
         onClose={() => setSelectedRental(null)}
