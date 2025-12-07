@@ -7,6 +7,7 @@ const rentalSchema = new mongoose.Schema(
       ref: "Apartment",
       required: true,
     },
+
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -16,18 +17,17 @@ const rentalSchema = new mongoose.Schema(
     // ⭐ User chỉ chọn số tháng khi tạo đơn thuê
     months: { type: Number, required: true },
 
-    // ⭐ startDate / endDate bạn tự thêm — giữ nguyên
     startDate: { type: Date, default: null },
     endDate: { type: Date, default: null },
 
     totalPrice: { type: Number, required: true },
 
-    // ⭐ MERGE HOÀN CHỈNH — GIỮ RESERVED + GIỮ ENUM CỦA BẠN
+    // ⭐ Trạng thái đơn thuê
     status: {
       type: String,
       enum: [
         "pending",
-        "reserved",    
+        "reserved",
         "approved",
         "rented",
         "cancelling",
@@ -36,8 +36,33 @@ const rentalSchema = new mongoose.Schema(
       default: "pending",
     },
 
+    // ⭐ Đã ký hợp đồng chưa
     contractSigned: { type: Boolean, default: false },
+
+    // ⭐ TEXT hợp đồng do user ký (controller có dùng!)
+    contractText: {
+      type: String,
+      default: "",
+    },
+
+    // ⭐ Đã thanh toán lần đầu chưa
     paymentDone: { type: Boolean, default: false },
+
+    // =====================================================
+    // 🔥 HỆ THỐNG THÔNG BÁO 2 CHIỀU (ADMIN <-> USER)
+    // =====================================================
+
+    // Admin có việc cần xử lý từ phía user
+    adminUnread: {
+      type: Boolean,
+      default: false,
+    },
+
+    // User có cập nhật mới từ phía admin
+    userUnread: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

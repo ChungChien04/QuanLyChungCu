@@ -8,8 +8,8 @@ const containerStyle = {
 };
 
 const center = {
-  lat: 10.780083, // ⭐ Thay bằng tọa độ tòa nhà của bạn
-  lng: 106.699981,
+  lat: 16.048848225226585,  
+  lng: 108.15855164285766,
 };
 
 const BuildingMap = () => {

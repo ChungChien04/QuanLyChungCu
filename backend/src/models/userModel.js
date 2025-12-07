@@ -35,16 +35,25 @@ const userSchema = new mongoose.Schema(
     address: { type: String, default: '' },
     avatar: { type: String, default: 'default-avatar.png' },
 
-    // ⭐ THÊM MỚI →
+    // ⭐ GIỚI TÍNH
     gender: {
       type: String,
       enum: ['male', 'female', 'other'],
       default: 'other'
     },
 
+    // ⭐ NGÀY SINH
     birthday: {
       type: String, // dùng String cho dễ xử lý FE
       default: ''
+    },
+
+    // ⭐ THÊM MỚI: ĐẾM THÔNG BÁO CHƯA ĐỌC
+    // - rentals: thông báo về hợp đồng (admin duyệt / huỷ / hoàn tất huỷ)
+    // - invoices: thông báo về hoá đơn (tương tự, nếu bạn muốn dùng sau này)
+    unreadNotifications: {
+      rentals: { type: Number, default: 0 },
+      invoices: { type: Number, default: 0 },
     },
   },
 

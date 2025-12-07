@@ -1,18 +1,20 @@
 const express = require("express");
 const router = express.Router();
 
-const { requireAuth, requireAdmin } = require("../middleware/auth");
+const { protect, admin } = require("../middleware/authMiddleware");
 
 const Apartment = require("../models/apartmentModel");
 const Rental = require("../models/rentalModel");
 const Invoice = require("../models/invoiceModel");
 const News = require("../models/newsModel");
 const User = require("../models/userModel");
+const Review = require("../models/reviewModel");
+
 
 // =======================================
-// ⭐ GET /api/admin/stats
+// ⭐ 1. GET /api/admin/stats  — Dashboard tổng quan
 // =======================================
-router.get("/stats", requireAuth, requireAdmin, async (req, res) => {
+router.get("/stats", protect, admin, async (req, res) => {
   try {
     const [apartments, rentals, invoices, news, users] = await Promise.all([
       Apartment.find(),
@@ -22,39 +24,48 @@ router.get("/stats", requireAuth, requireAdmin, async (req, res) => {
       User.find(),
     ]);
 
-    // -----------------------------
-    // 1. Stats căn hộ / người dùng / tin tức / đơn thuê
+    // -----------------------------  
+    // 1️⃣ Thống kê căn hộ
     // -----------------------------
     const apartmentStats = {
       total: apartments.length,
-      available: apartments.filter((a) => a.status === "available").length,
-      rented: apartments.filter((a) => a.status === "rented").length,
-      reserved: apartments.filter((a) => a.status === "reserved").length,
+      available: apartments.filter(a => a.status === "available").length,
+      rented: apartments.filter(a => a.status === "rented").length,
+      reserved: apartments.filter(a => a.status === "reserved").length,
     };
 
+    // -----------------------------  
+    // 2️⃣ Thống kê đơn thuê
+    // -----------------------------
     const rentalStats = {
       total: rentals.length,
-      pending: rentals.filter((r) => r.status === "pending").length,
-      approved: rentals.filter((r) => r.status === "approved").length,
-      rented: rentals.filter((r) => r.status === "rented").length,
-      cancelling: rentals.filter((r) => r.status === "cancelling").length,
-      cancelled: rentals.filter((r) => r.status === "cancelled").length,
+      pending: rentals.filter(r => r.status === "pending").length,
+      approved: rentals.filter(r => r.status === "approved").length,
+      rented: rentals.filter(r => r.status === "rented").length,
+      cancelling: rentals.filter(r => r.status === "cancelling").length,
+      cancelled: rentals.filter(r => r.status === "cancelled").length,
     };
 
+    // -----------------------------  
+    // 3️⃣ Thống kê tin tức
+    // -----------------------------
     const newsStats = {
       total: news.length,
-      active: news.filter((n) => n.status === true).length,
-      inactive: news.filter((n) => n.status === false).length,
+      active: news.filter(n => n.status === true).length,
+      inactive: news.filter(n => n.status === false).length,
     };
 
+    // -----------------------------  
+    // 4️⃣ Thống kê user
+    // -----------------------------
     const userStats = {
       total: users.length,
-      admins: users.filter((u) => u.role === "admin").length,
-      customers: users.filter((u) => u.role !== "admin").length,
+      admins: users.filter(u => u.role === "admin").length,
+      customers: users.filter(u => u.role !== "admin").length,
     };
 
-    // -----------------------------
-    // 2. Doanh thu: tháng hiện tại + tháng trước
+    // -----------------------------  
+    // 5️⃣ Doanh thu tháng này + tháng trước
     // -----------------------------
     const now = new Date();
     const curMonth = now.getMonth() + 1;
@@ -64,35 +75,27 @@ router.get("/stats", requireAuth, requireAdmin, async (req, res) => {
     let prevYear = curYear;
     if (prevMonth === 0) {
       prevMonth = 12;
-      prevYear = curYear - 1;
+      prevYear -= 1;
     }
 
-    // ⚡ TÍNH DOANH THU TỪ TẤT CẢ HÓA ĐƠN KHÔNG BỊ HỦY
-    // (unpaid + paid). Sau này nếu bạn muốn chỉ tính tiền đã thu,
-    // đổi lại thành: inv.status === "paid"
-    const revenueInvoices = invoices.filter(
-      (inv) => inv.status !== "cancelled"
+    const revenueInvoices = invoices.filter(inv => inv.status !== "cancelled");
+
+    const invoicesCurrent = revenueInvoices.filter(
+      inv => inv.month === curMonth && inv.year === curYear
     );
 
-    const invoicesCurrentMonth = revenueInvoices.filter(
-      (inv) => inv.month === curMonth && inv.year === curYear
+    const invoicesPrev = revenueInvoices.filter(
+      inv => inv.month === prevMonth && inv.year === prevYear
     );
 
-    const revenueCurrentMonth = invoicesCurrentMonth.reduce(
-      (sum, inv) => sum + (inv.totalAmount || 0),
-      0
+    const revenueCurrentMonth = invoicesCurrent.reduce(
+      (sum, inv) => sum + (inv.totalAmount || 0), 0
     );
 
-    const invoicesPrevMonth = revenueInvoices.filter(
-      (inv) => inv.month === prevMonth && inv.year === prevYear
+    const revenuePrevMonth = invoicesPrev.reduce(
+      (sum, inv) => sum + (inv.totalAmount || 0), 0
     );
 
-    const revenuePrevMonth = invoicesPrevMonth.reduce(
-      (sum, inv) => sum + (inv.totalAmount || 0),
-      0
-    );
-
-    // Tính tăng trưởng %
     let revenueGrowth = null;
     if (revenuePrevMonth > 0) {
       revenueGrowth = Math.round(
@@ -100,75 +103,65 @@ router.get("/stats", requireAuth, requireAdmin, async (req, res) => {
       );
     }
 
+    // -----------------------------  
+    // 6️⃣ Doanh thu 12 tháng gần nhất
     // -----------------------------
-    // 3. Doanh thu 6 tháng gần nhất (dùng invoice không bị hủy)
+    const monthlyRevenueMap = {};
+
+    revenueInvoices.forEach(inv => {
+      if (!inv.month || !inv.year) return;
+      const key = `${inv.year}-${String(inv.month).padStart(2, "0")}`;
+      monthlyRevenueMap[key] =
+        (monthlyRevenueMap[key] || 0) + (inv.totalAmount || 0);
+    });
+
+    const monthlyRevenue = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(curYear, curMonth - 1 - i, 1);
+      const year = d.getFullYear();
+      const month = d.getMonth() + 1;
+      const key = `${year}-${String(month).padStart(2, "0")}`;
+
+      monthlyRevenue.push({
+        year,
+        month,
+        total: monthlyRevenueMap[key] || 0,
+      });
+    }
+
+    // -----------------------------  
+    // 7️⃣ Hoạt động gần đây
     // -----------------------------
-    // -----------------------------
-// 3. Doanh thu 12 tháng gần nhất (dùng invoice không bị hủy)
-// -----------------------------
-const monthlyRevenueMap = {};
+    const recentRentals = rentals.map(r => ({
+      type: "rental",
+      typeLabel: "Đơn thuê",
+      title: r.apartment?.title || "Đơn thuê căn hộ",
+      status: r.status,
+      date: r.createdAt || r.startDate,
+    }));
 
-revenueInvoices.forEach((inv) => {
-  if (!inv.month || !inv.year) return;
+    const recentInvoices = invoices.map(inv => ({
+      type: "invoice",
+      typeLabel: "Hóa đơn",
+      title: inv.apartment?.title || "Hóa đơn căn hộ",
+      status: inv.status,
+      date: inv.createdAt,
+    }));
 
-  const key = `${inv.year}-${String(inv.month).padStart(2, "0")}`;
-  monthlyRevenueMap[key] =
-    (monthlyRevenueMap[key] || 0) + (inv.totalAmount || 0);
-});
-
-// Tạo đủ 12 tháng gần nhất (kể cả tháng không có hóa đơn)
-const monthlyRevenue = [];
-for (let i = 11; i >= 0; i--) {
-  const d = new Date(curYear, curMonth - 1 - i, 1); // lùi i tháng
-  const year = d.getFullYear();
-  const month = d.getMonth() + 1;
-  const key = `${year}-${String(month).padStart(2, "0")}`;
-
-  monthlyRevenue.push({
-    year,
-    month,
-    total: monthlyRevenueMap[key] || 0, // nếu không có hóa đơn, xem như 0
-  });
-}
-
-    // -----------------------------
-    // 4. Hoạt động gần đây
-    // -----------------------------
-    const recentRentals = rentals
-      .map((r) => ({
-        type: "rental",
-        typeLabel: "Đơn thuê",
-        title: r.apartment?.title || "Đơn thuê căn hộ",
-        status: r.status,
-        date: r.createdAt || r.startDate,
-      }))
-      .filter((x) => x.date);
-
-    const recentInvoices = invoices
-      .map((inv) => ({
-        type: "invoice",
-        typeLabel: "Hóa đơn",
-        title: inv.apartment?.title || "Hóa đơn căn hộ",
-        status: inv.status,
-        date: inv.createdAt,
-      }))
-      .filter((x) => x.date);
-
-    const recentNews = news
-      .map((n) => ({
-        type: "news",
-        typeLabel: "Tin tức",
-        title: n.title,
-        status: n.status ? "active" : "inactive",
-        date: n.createdAt,
-      }))
-      .filter((x) => x.date);
+    const recentNews = news.map(n => ({
+      type: "news",
+      typeLabel: "Tin tức",
+      title: n.title,
+      status: n.status ? "active" : "inactive",
+      date: n.createdAt,
+    }));
 
     const recent = [...recentRentals, ...recentInvoices, ...recentNews]
+      .filter(x => x.date)
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 7);
 
-    // -----------------------------
+    // -----------------------------  
     // 🔥 Response
     // -----------------------------
     res.json({
@@ -193,5 +186,47 @@ for (let i = 11; i >= 0; i--) {
     res.status(500).json({ message: "Lỗi server" });
   }
 });
+
+
+// =======================================
+// ⭐ 2. GET /api/admin/summary-counts — Badge cảnh báo Admin Navbar
+// =======================================
+router.get("/summary-counts", protect, admin, async (req, res) => {
+  try {
+    const apartmentsPending = await Apartment.countDocuments({
+      status: "reserved",
+    });
+
+    const rentalsPending = await Rental.countDocuments({
+      status: { $in: ["pending", "cancelling"] },
+    });
+
+    const invoicesPending = await Invoice.countDocuments({
+      status: "paid",
+      isViewedByAdmin: false,
+    });
+
+    const newsPending = await News.countDocuments({ status: false });
+
+    const reviewsPending = await Review.countDocuments({
+      $or: [
+        { reply: { $exists: false } },
+        { "reply.content": { $in: [null, ""] } },
+      ],
+    });
+
+    res.json({
+      apartmentsPending,
+      rentalsPending,
+      invoicesPending,
+      newsPending,
+      reviewsPending,
+    });
+  } catch (err) {
+    console.error("summary-counts error:", err);
+    res.status(500).json({ message: "Lỗi server khi lấy summary admin." });
+  }
+});
+
 
 module.exports = router;

@@ -1,13 +1,16 @@
 const Rental = require("../models/rentalModel");
 const Apartment = require("../models/apartmentModel");
-const Invoice = require("../models/invoiceModel"); 
-// 1️⃣ User tạo đơn thuê
+const Invoice = require("../models/invoiceModel");
+
+
+// ======================================================
+// 1️⃣ USER TẠO ĐƠN THUÊ → ADMIN NHẬN THÔNG BÁO
+// ======================================================
 exports.createRental = async (req, res) => {
   const { apartmentId, months, startDate, endDate } = req.body;
 
   try {
     const apartment = await Apartment.findById(apartmentId);
-
     if (!apartment)
       return res.status(404).json({ message: "Căn hộ không tồn tại." });
 
@@ -22,6 +25,8 @@ exports.createRental = async (req, res) => {
       endDate,
       status: "pending",
       totalPrice: apartment.price * months,
+      adminUnread: true,      // 🔥 Thông báo cho admin
+      userUnread: false
     });
 
     // GIỮ CHỖ căn hộ khi có đơn pending
@@ -34,9 +39,18 @@ exports.createRental = async (req, res) => {
   }
 };
 
-// 2️⃣ Lấy danh sách hợp đồng của tôi
+
+// ======================================================
+// 2️⃣ LẤY DANH SÁCH ĐƠN THUÊ CỦA USER + RESET userUnread
+// ======================================================
 exports.getMyRentals = async (req, res) => {
   try {
+    // user xem ⇒ đánh dấu đã đọc
+    await Rental.updateMany(
+      { user: req.user._id, userUnread: true },
+      { userUnread: false }
+    );
+
     const rentals = await Rental.find({ user: req.user._id })
       .populate("apartment")
       .sort({ createdAt: -1 });
@@ -47,30 +61,46 @@ exports.getMyRentals = async (req, res) => {
   }
 };
 
-// 3️⃣ Admin xem các đơn pending
+
+// ======================================================
+// 3️⃣ ADMIN XEM DANH SÁCH PENDING + RESET adminUnread
+// ======================================================
 exports.getPendingRentals = async (req, res) => {
   try {
+    await Rental.updateMany(
+      { adminUnread: true },
+      { adminUnread: false }
+    );
+
     const rentals = await Rental.find({ status: "pending" })
       .populate("apartment user");
+
     res.json(rentals);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// 4️⃣ Admin xem tất cả rental
+
+// ======================================================
+// 4️⃣ ADMIN LẤY TOÀN BỘ RENTALS
+// ======================================================
 exports.getAllRentals = async (req, res) => {
   try {
     const rentals = await Rental.find()
       .populate("apartment user")
       .sort({ createdAt: -1 });
+
     res.json(rentals);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// 5️⃣ Admin duyệt
+
+// ======================================================
+// 5️⃣ ADMIN DUYỆT ĐƠN → USER NHẬN THÔNG BÁO
+// ======================================================
 exports.approveRental = async (req, res) => {
   try {
     const rental = await Rental.findById(req.params.id).populate("apartment");
@@ -79,6 +109,10 @@ exports.approveRental = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy đơn thuê." });
 
     rental.status = "approved";
+
+    rental.userUnread = true;     // 🔥 báo cho user
+    rental.adminUnread = false;
+
     await rental.save();
 
     res.json(rental);
@@ -87,7 +121,10 @@ exports.approveRental = async (req, res) => {
   }
 };
 
-// 6️⃣ User ký hợp đồng
+
+// ======================================================
+// 6️⃣ USER KÝ HỢP ĐỒNG → ADMIN NHẬN THÔNG BÁO
+// ======================================================
 exports.signContract = async (req, res) => {
   try {
     const rental = await Rental.findById(req.params.id).populate("apartment");
@@ -101,6 +138,9 @@ exports.signContract = async (req, res) => {
     rental.contractText = req.body.contractText;
     rental.contractSigned = true;
 
+    rental.adminUnread = true;   // 🔥 báo admin
+    rental.userUnread = false;
+
     await rental.save();
 
     res.json({
@@ -112,7 +152,10 @@ exports.signContract = async (req, res) => {
   }
 };
 
-// 7️⃣ Lấy rental theo ID
+
+// ======================================================
+// 7️⃣ GET RENTAL BY ID
+// ======================================================
 exports.getRentalById = async (req, res) => {
   try {
     const rental = await Rental.findById(req.params.id)
@@ -128,7 +171,10 @@ exports.getRentalById = async (req, res) => {
   }
 };
 
-// 8️⃣ Hủy rental (user hoặc admin)
+
+// ======================================================
+// 8️⃣ HỦY RENTAL (User hoặc Admin)
+// ======================================================
 exports.cancelRental = async (req, res) => {
   try {
     const rental = await Rental.findById(req.params.id).populate("apartment");
@@ -137,37 +183,10 @@ exports.cancelRental = async (req, res) => {
 
     const { finish } = req.body;
 
-    // ---------------------------------------------------------
-    // TRƯỜNG HỢP 1: Admin xác nhận hoàn tất hủy (Từ trạng thái 'cancelling')
-    // ---------------------------------------------------------
+    // -----------------------------
+    // TRƯỜNG HỢP 1: ADMIN HOÀN TẤT HỦY
+    // -----------------------------
     if (finish && rental.status === "cancelling") {
-      rental.status = "cancelled";
-
-      // Trả phòng
-      if (rental.apartment) {
-        rental.apartment.status = "available"; 
-        await rental.apartment.save();
-      }
-
-      // 🔥 LOGIC MỚI: Hủy tất cả hóa đơn chưa thanh toán của hợp đồng này
-      await Invoice.updateMany(
-        { rental: rental._id, status: "unpaid" },
-        { status: "cancelled" }
-      );
-
-      await rental.save();
-      return res.json({ message: "Hủy hợp đồng hoàn tất. Các hóa đơn liên quan đã bị hủy.", rental });
-    }
-
-    // ---------------------------------------------------------
-    // TRƯỜNG HỢP 2: Yêu cầu hủy
-    // ---------------------------------------------------------
-    
-    // Nếu đang thuê/đã duyệt -> Chuyển sang chờ hủy (chưa hủy hóa đơn vội)
-    if (["approved", "rented", "reserved"].includes(rental.status)) {
-      rental.status = "cancelling";
-    } else {
-      // Nếu mới là pending -> Hủy luôn
       rental.status = "cancelled";
 
       if (rental.apartment) {
@@ -175,15 +194,50 @@ exports.cancelRental = async (req, res) => {
         await rental.apartment.save();
       }
 
-      // 🔥 LOGIC MỚI: Hủy hóa đơn ngay lập tức (nếu có lỡ tạo)
       await Invoice.updateMany(
         { rental: rental._id, status: "unpaid" },
         { status: "cancelled" }
       );
+
+      rental.userUnread = true;   // 🔥 Báo người dùng
+      rental.adminUnread = false;
+
+      await rental.save();
+      return res.json({ 
+        message: "Hủy hợp đồng hoàn tất.",
+        rental 
+      });
+    }
+
+    // -----------------------------
+    // TRƯỜNG HỢP 2: USER YÊU CẦU HỦY
+    // -----------------------------
+    if (["approved", "rented", "reserved"].includes(rental.status)) {
+      rental.status = "cancelling";
+
+      rental.adminUnread = true;   // 🔥 báo admin
+      rental.userUnread = false;
+
+    } else {
+      // pending → hủy ngay
+      rental.status = "cancelled";
+
+      if (rental.apartment) {
+        rental.apartment.status = "available";
+        await rental.apartment.save();
+      }
+
+      await Invoice.updateMany(
+        { rental: rental._id, status: "unpaid" },
+        { status: "cancelled" }
+      );
+
+      rental.adminUnread = true;
+      rental.userUnread = false;
     }
 
     await rental.save();
-    
+
     res.json({
       message: rental.status === "cancelled" 
         ? "Đơn thuê đã hủy thành công." 

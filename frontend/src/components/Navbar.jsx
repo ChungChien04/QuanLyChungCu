@@ -24,12 +24,56 @@ import {
   ChartBarIcon,
 } from "@heroicons/react/24/outline";
 
+// ============================
+// 🔹 ADMIN BADGE COMPONENT (KHAI BÁO NGOÀI NAVBAR)
+// ============================
+const AdminBadge = ({ count }) =>
+  count > 0 ? (
+    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] min-w-[16px] h-[16px] flex items-center justify-center rounded-full shadow-sm">
+      {count > 9 ? "9+" : count}
+    </span>
+  ) : null;
+
+// ============================
+// 🔹 NAVBAR COMPONENT
+// ============================
 const Navbar = () => {
   const { user, logout, token } = useAuth();
   const [news, setNews] = useState([]);
   const [approvedCount, setApprovedCount] = useState(0);
   const [unpaidCount, setUnpaidCount] = useState(0);
   const location = useLocation();
+
+  const [adminCounts, setAdminCounts] = useState({
+    apartments: 0,
+    rentals: 0,
+    invoices: 0,
+    news: 0,
+    reviews: 0,
+  });
+
+  // ============================
+  // ADMIN SUMMARY COUNTS (ADMIN)
+  // ============================
+  useEffect(() => {
+    if (!token || user?.role !== "admin") return;
+
+    axios
+      .get("/api/admin/summary-counts", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        const d = res.data || {};
+        setAdminCounts({
+          apartments: d.apartmentsPending || 0,
+          rentals: d.rentalsPending || 0,
+          invoices: d.invoicesPending || 0,
+          news: d.newsPending || 0,
+          reviews: d.reviewsPending || 0,
+        });
+      })
+      .catch(() => {});
+  }, [token, user, location.pathname]);
 
   // Dropdowns
   const [newsDropdownOpen, setNewsDropdownOpen] = useState(false);
@@ -178,14 +222,13 @@ const Navbar = () => {
               className="flex items-center gap-3 flex-shrink-0 group"
             >
               <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br  flex items-center justify-center shadow-lg shadow-emerald-500/20 overflow-hidden">
-  <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_0_0,white,transparent_55%)]" />
-  <img
-    src="/logo.png"             // lấy từ thư mục public
-    alt="SmartBuilding logo"
-    className="relative z-10 w-full h-full object-contain"
-  />
-</div>
-
+                <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_0_0,white,transparent_55%)]" />
+                <img
+                  src="/logo.png"
+                  alt="SmartBuilding logo"
+                  className="relative z-10 w-full h-full object-contain"
+                />
+              </div>
 
               <div className="flex flex-col">
                 <span className="text-base sm:text-xl font-extrabold text-slate-900 leading-tight tracking-tight group-hover:text-emerald-700 transition-colors">
@@ -378,7 +421,7 @@ const Navbar = () => {
                           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-50 transition cursor-pointer"
                           onClick={() => setAdminDropdownOpen(false)}
                         >
-                          <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center text-slate-700 border border-slate-100">
+                          <div className="relative w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center text-slate-700 border border-slate-100">
                             <ChartBarIcon className="w-5 h-5" />
                           </div>
                           <div className="flex-1">
@@ -397,8 +440,9 @@ const Navbar = () => {
                           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-50 transition cursor-pointer"
                           onClick={() => setAdminDropdownOpen(false)}
                         >
-                          <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-700 border border-emerald-100">
+                          <div className="relative w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-700 border border-emerald-100">
                             <BuildingOffice2Icon className="w-5 h-5" />
+                            <AdminBadge count={adminCounts.apartments} />
                           </div>
                           <div className="flex-1">
                             <p className="text-sm font-semibold text-slate-900">
@@ -415,8 +459,9 @@ const Navbar = () => {
                           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-50 transition cursor-pointer"
                           onClick={() => setAdminDropdownOpen(false)}
                         >
-                          <div className="w-9 h-9 rounded-xl bg-sky-50 flex items-center justify-center text-sky-700 border border-sky-100">
+                          <div className="relative w-9 h-9 rounded-xl bg-sky-50 flex items-center justify-center text-sky-700 border border-sky-100">
                             <ClipboardDocumentListIcon className="w-5 h-5" />
+                            <AdminBadge count={adminCounts.rentals} />
                           </div>
                           <div className="flex-1">
                             <p className="text-sm font-semibold text-slate-900">
@@ -433,8 +478,9 @@ const Navbar = () => {
                           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-50 transition cursor-pointer"
                           onClick={() => setAdminDropdownOpen(false)}
                         >
-                          <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-700 border border-amber-100">
+                          <div className="relative w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-700 border border-amber-100">
                             <ReceiptPercentIcon className="w-5 h-5" />
+                            <AdminBadge count={adminCounts.invoices} />
                           </div>
                           <div className="flex-1">
                             <p className="text-sm font-semibold text-slate-900">
@@ -451,8 +497,9 @@ const Navbar = () => {
                           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-50 transition cursor-pointer"
                           onClick={() => setAdminDropdownOpen(false)}
                         >
-                          <div className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-700 border border-indigo-100">
+                          <div className="relative w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-700 border border-indigo-100">
                             <NewspaperIcon className="w-5 h-5" />
+                            <AdminBadge count={adminCounts.news} />
                           </div>
                           <div className="flex-1">
                             <p className="text-sm font-semibold text-slate-900">
@@ -469,8 +516,9 @@ const Navbar = () => {
                           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-50 transition cursor-pointer"
                           onClick={() => setAdminDropdownOpen(false)}
                         >
-                          <div className="w-9 h-9 rounded-xl bg-pink-50 flex items-center justify-center text-pink-700 border border-pink-100">
+                          <div className="relative w-9 h-9 rounded-xl bg-pink-50 flex items-center justify-center text-pink-700 border border-pink-100">
                             <StarIcon className="w-5 h-5" />
+                            <AdminBadge count={adminCounts.reviews} />
                           </div>
                           <div className="flex-1">
                             <p className="text-sm font-semibold text-slate-900">
@@ -628,7 +676,7 @@ const Navbar = () => {
                           onClick={() => setMobileOpen(false)}
                           className="flex items-center gap-2 py-1.5 text-slate-700 hover:text-emerald-700"
                         >
-                          <span className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center text-slate-700 border border-slate-100">
+                          <span className="relative w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center text-slate-700 border border-slate-100">
                             <ChartBarIcon className="w-4 h-4" />
                           </span>
                           <span className="text-sm">Dashboard tổng quan</span>
@@ -639,8 +687,9 @@ const Navbar = () => {
                           onClick={() => setMobileOpen(false)}
                           className="flex items-center gap-2 py-1.5 text-slate-700 hover:text-emerald-700"
                         >
-                          <span className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-700 border border-emerald-100">
+                          <span className="relative w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-700 border border-emerald-100">
                             <BuildingOffice2Icon className="w-4 h-4" />
+                            <AdminBadge count={adminCounts.apartments} />
                           </span>
                           <span className="text-sm">Quản lý Căn hộ</span>
                         </Link>
@@ -650,8 +699,9 @@ const Navbar = () => {
                           onClick={() => setMobileOpen(false)}
                           className="flex items-center gap-2 py-1.5 text-slate-700 hover:text-emerald-700"
                         >
-                          <span className="w-7 h-7 rounded-lg bg-sky-50 flex items-center justify-center text-sky-700 border border-sky-100">
+                          <span className="relative w-7 h-7 rounded-lg bg-sky-50 flex items-center justify-center text-sky-700 border border-sky-100">
                             <ClipboardDocumentListIcon className="w-4 h-4" />
+                            <AdminBadge count={adminCounts.rentals} />
                           </span>
                           <span className="text-sm">Quản lý Hợp đồng</span>
                         </Link>
@@ -661,8 +711,9 @@ const Navbar = () => {
                           onClick={() => setMobileOpen(false)}
                           className="flex items-center gap-2 py-1.5 text-slate-700 hover:text-emerald-700"
                         >
-                          <span className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center text-amber-700 border border-amber-100">
+                          <span className="relative w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center text-amber-700 border border-amber-100">
                             <ReceiptPercentIcon className="w-4 h-4" />
+                            <AdminBadge count={adminCounts.invoices} />
                           </span>
                           <span className="text-sm">Quản lý Hóa đơn</span>
                         </Link>
@@ -672,8 +723,9 @@ const Navbar = () => {
                           onClick={() => setMobileOpen(false)}
                           className="flex items-center gap-2 py-1.5 text-slate-700 hover:text-emerald-700"
                         >
-                          <span className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-700 border border-indigo-100">
+                          <span className="relative w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-700 border border-indigo-100">
                             <NewspaperIcon className="w-4 h-4" />
+                            <AdminBadge count={adminCounts.news} />
                           </span>
                           <span className="text-sm">Quản lý Tin tức</span>
                         </Link>
@@ -683,8 +735,9 @@ const Navbar = () => {
                           onClick={() => setMobileOpen(false)}
                           className="flex items-center gap-2 py-1.5 text-slate-700 hover:text-emerald-700"
                         >
-                          <span className="w-7 h-7 rounded-lg bg-pink-50 flex items-center justify-center text-pink-700 border border-pink-100">
+                          <span className="relative w-7 h-7 rounded-lg bg-pink-50 flex items-center justify-center text-pink-700 border border-pink-100">
                             <StarIcon className="w-4 h-4" />
+                            <AdminBadge count={adminCounts.reviews} />
                           </span>
                           <span className="text-sm">Quản lý Đánh giá</span>
                         </Link>

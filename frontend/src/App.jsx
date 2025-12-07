@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import useAuth from "./hooks/useAuth";
 
 // Pages - Public
 import HomePage from "./pages/HomePage";
@@ -21,7 +22,7 @@ import AdminApartmentPage from "./pages/admin/AdminApartmentPage";
 import AdminRentalsPage from "./pages/AdminRentalManagement";
 import AdminNewsPage from "./pages/admin/AdminNewsPage";
 import AdminInvoiceManagement from "./pages/admin/AdminInvoiceManagement";
-import AdminDashboard from "./pages/admin/AdminDashboard";// ⭐ THÊM DÒNG NÀY
+import AdminDashboard from "./pages/admin/AdminDashboard";
 
 // Client Pages
 import MyInvoicesPage from "./pages/MyInvoicesPage";
@@ -32,19 +33,25 @@ import NewsListPage from "./pages/NewsListPage";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
 
+// ⭐ Nút hỗ trợ Zalo + Hotline
+import FloatingSupportButton from "./components/FloatingSupportButton";
+
 function App() {
+  const { user } = useAuth(); // ⭐ Lấy thông tin user để kiểm tra role
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
+      
       {/* NAVBAR */}
       <Navbar />
 
-      {/* MAIN CONTENT (được đẩy xuống dưới navbar 80px) */}
+      {/* MAIN CONTENT */}
       <main className="flex-1 pt-[80px]">
         <Routes>
           {/* HOME */}
           <Route path="/" element={<HomePage />} />
 
-          {/* PUBLIC */}
+          {/* PUBLIC ROUTES */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/chatbot" element={<ChatbotPage />} />
@@ -52,12 +59,9 @@ function App() {
           <Route path="/verify-otp" element={<VerifyOTPPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          {/* LIST OF APARTMENTS */}
+          {/* APARTMENTS */}
           <Route path="/apartments" element={<ApartmentListPage />} />
-
-          {/* DETAIL ROUTE CHÍNH */}
           <Route path="/apartments/:id" element={<ApartmentDetailPage />} />
-          {/* DETAIL ROUTE CŨ - backward compatibility */}
           <Route path="/apartment/:id" element={<ApartmentDetailPage />} />
 
           <Route path="/google/callback" element={<GoogleCallback />} />
@@ -82,18 +86,15 @@ function App() {
             }
           />
 
-          {/* ============ ADMIN ROUTES ============ */}
-
-          {/* ⭐ DASHBOARD TỔNG */}
+          {/* ADMIN ROUTES */}
           <Route
-  path="/admin/dashboard"
-  element={
-    <AdminRoute>
-      <AdminDashboard />
-    </AdminRoute>
-  }
-/>
-
+            path="/admin/dashboard"
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            }
+          />
 
           <Route
             path="/admin/news"
@@ -140,7 +141,7 @@ function App() {
             }
           />
 
-          {/* ============ CLIENT ROUTES ============ */}
+          {/* CLIENT ROUTES */}
           <Route
             path="/profile"
             element={
@@ -161,7 +162,10 @@ function App() {
         </Routes>
       </main>
 
-      {/* FOOTER (luôn ở dưới) */}
+      {/* ⭐ NÚT HỖ TRỢ CHỈ CHO KHÁCH HÀNG */}
+      {user && user.role === "resident" && <FloatingSupportButton />}
+
+      {/* FOOTER */}
       <Footer />
     </div>
   );
